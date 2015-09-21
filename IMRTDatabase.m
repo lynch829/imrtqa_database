@@ -19,7 +19,7 @@ methods
         javaaddpath('./sqlite-jdbc-3.8.5-pre1.jar');
     
         % Verify database file exists
-        if exist(Name, 'file') == 2
+        if exist(db, 'file') == 2
         
             % Store database, username, and password
             obj.connection = database(db, '', '', 'org.sqlite.JDBC', ...
