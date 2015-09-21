@@ -18,12 +18,24 @@ methods
         % Add SQLite JDBC driver (current database is 3.8.5)
         javaaddpath('./sqlite-jdbc-3.8.5-pre1.jar');
     
-        % Store database, username, and password
-        obj.connection = database(db, '', '', 'org.sqlite.JDBC', ...
-            ['jdbc:sqlite:',db]);
+        % Verify database file exists
+        if exist(Name, 'file') == 2
         
-        % Set the data return format to support strings
-        setdbprefs('DataReturnFormat', 'cellarray')
+            % Store database, username, and password
+            obj.connection = database(db, '', '', 'org.sqlite.JDBC', ...
+                ['jdbc:sqlite:',db]);
+
+            % Set the data return format to support strings
+            setdbprefs('DataReturnFormat', 'cellarray')
+        else
+            if exist('Event', 'file') == 2
+                Event(['The SQLite3 database file is missing. Use the ', ...
+                    'schema.sql file to create the file ', db], 'ERROR');
+            else
+                error(['The SQLite3 database file is missing. Use the ', ...
+                    'schema.sql file to create the file ', db]);
+            end
+        end
     end
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
