@@ -50,7 +50,7 @@ if exist('loadjson', 'file') ~= 2
 end
 
 % Log start of search and start timer
-Event(['Searching ', path, ' for IMRT QA reports']);
+Event(['Searching ', path, ' for TomoTherapy patient archives']);
 t = tic;
 
 % Retrieve folder contents of directory
