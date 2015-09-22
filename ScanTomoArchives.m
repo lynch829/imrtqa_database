@@ -160,7 +160,8 @@ while i < size(list, 1)
                 for j = 1:length(planUIDs)
                     
                     % Retrieve Plan 
-                    plan = LoadPlan(fullpath, patient, planUIDs{j});
+                    plan = LoadPlan(fullpath, patient, planUIDs{j}, ...
+                        'noerrormsg');
                     
                     % Add this plan to the return variable
                     if nargout == 1
