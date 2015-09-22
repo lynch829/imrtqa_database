@@ -160,15 +160,21 @@ while i < size(list, 1)
                 for j = 1:length(planUIDs)
                     
                     % Retrieve Plan 
-                    plan = LoadPlan(fullpath, patient, planUIDs{j}, ...
-                        'noerrormsg');
+                    try
+                        plan = LoadPlan(fullpath, patient, planUIDs{j}, ...
+                            'noerrormsg');
+                    catch
+                        Event(['LoadPlan encountered an error, ', ...
+                            'continuing to next plan'], 'CATCH');
+                        continue
+                    end
                     
                     % Add this plan to the return variable
                     if nargout == 1
                         varargout{1}{c} = plan;
                     end
                     
-                    % If data does not already exist
+                    % If a database is provided
                     if ~isempty(db) 
                         
                         % Search for matching Tomo record using patient
@@ -196,17 +202,12 @@ while i < size(list, 1)
                                     'this patient in the database and will be ', ...
                                     'updated']);
 
-                                % Query the record containing the same patient ID,
-                                % plan name, and plan date
-                                tomo = db.queryRecords('tomo', 'id', plan.patientID, ...
-                                    'plan', plan.planLabel, 'plandate', ...
-                                    sprintf('%0.10f', datenum(plan.timestamp)));
-
                                 % Delete the record
-                                db.deleteRecords('tomo', 'uid', tomo{1}.uid);
+                                db.deleteRecords('tomo', 'uid', ...
+                                    tomo{k}.uid);
 
                                 % Insert a new record using the same UID
-                                db.addRecord(plan, 'tomo', tomo{1}.uid);
+                                db.addRecord(plan, 'tomo', tomo{k}.uid);
                             end
                         end
 
