@@ -164,7 +164,7 @@ methods
         end
         cursor = exec(obj.connection, sql);
         cursor = fetch(cursor);
-        data = cursor.data;
+        data = cursor.Data;
         clear sql cursor;
     end
     
