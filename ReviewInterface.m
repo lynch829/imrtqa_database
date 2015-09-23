@@ -22,7 +22,7 @@ function varargout = ReviewInterface(varargin)
 
 % Edit the above text to modify the response to help ReviewInterface
 
-% Last Modified by GUIDE v2.5 18-Sep-2015 10:12:36
+% Last Modified by GUIDE v2.5 23-Sep-2015 12:04:47
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -114,46 +114,58 @@ clear separator;
 % Log information
 Event(string, 'INIT');
 
-% Log database load
-Event(['Loading database file ', handles.dbFile]);
-
-% Load file
-handles.db = IMRTDatabase(fullfile(handles.path, handles.dbFile));
-
-% Verify database has loaded
-if isempty(handles.db.connection.URL)
-    Event(['Could not open connection to ', handles.dbFile, ':', ...
-        handles.db.connection.Message], 'ERROR');
-end
-
-% Set filter options
-options = { 
+% Set range options, defaulting to Last 90 days
+handles.ranges = { 
     'All Records'
     'Last 30 Days'
     'Last 90 Days'
-    'Custom'
+    'Last 1 Year'
+    'Custom Dates'
 };
-set(handles.filter, 'String', options);
-clear options;
+set(handles.range, 'String', handles.ranges);
+set(handles.range, 'Value', 3);
+handles.range_high = now;
+handles.range_low = handles.range_high - 90;
+
+% Initialize empty plot_stats table
+set(handles.plot_stats, 'Data', cell(4, 8));
 
 % Set plot options
-options = PlotResults();
-set(handles.plot_types, 'String', options);
-clear options;
-
-% Diable plot list
-set(handles.plot_types, 'enable', 'off');
-
-% Disable plot
-set(allchild(handles.plot_axes), 'visible', 'off'); 
-set(handles.plot_axes, 'visible', 'off');
-colorbar(handles.plot_axes,'off');
-
-% Update database summary table
-handles = UpdateSummary(handles);
+set(handles.plot_types, 'String', PlotData());
+set(handles.plot_types, 'Value', 1);
 
 % Log default path
 Event(['Default file path set to ', handles.path]);
+
+% Log database load
+Event(['Loading default database file ', handles.dbFile]);
+
+% Verify database file exists
+if exist(fullfile(handles.path, handles.dbFile), 'file') == 2
+
+    % Initialize new connection to database
+    handles.db = IMRTDatabase(fullfile(handles.path, handles.dbFile));
+    
+    % Verify database has loaded
+    if isempty(handles.db.connection.URL)
+        Event(['Could not open connection to ', handles.dbFile, ':', ...
+            handles.db.connection.Message], 'ERROR');
+    end
+
+    % Update database summary table
+    handles = UpdateSummary(handles);
+
+    % Update plot using first option
+    plots = cellstr(get(handles.plot_types,'String'));
+    PlotData('axes', handles.plot_axes, 'db', handles.db, 'type', ...
+        plots{get(handles.plot_types,'Value')}, 'range', ...
+        [handles.range_low, handles.range_high], 'stats', handles.plot_stats);
+    clear plots;
+else
+    
+    % Otherwise, execute callback to prompt user to select a different db
+    handles = opendb_Callback(handles.opendb, '', handles);
+end
 
 % Update handles structure
 guidata(hObject, handles);
@@ -167,6 +179,57 @@ function varargout = ReviewInterface_OutputFcn(~, ~, handles)
 
 % Get default command line output from handles structure
 varargout{1} = handles.output;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function varargout = opendb_Callback(hObject, ~, handles)
+% hObject    handle to opendb (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Prompt user to select a new database file
+Event('UI window opened to select database');
+[file, path] = uigetfile('*.db','Select a database to open');
+
+% If a directory was selected
+if ~isequal(file, 0)
+
+    % Update default path
+    handles.path = path;
+    Event(['Default file path updated to ', path]);
+    
+    % Initialize new connection to database
+    handles.dbFile = file;
+    Event(['Loading database file ', fullfile(path, file)]);
+    handles.db = IMRTDatabase(fullfile(path, file));
+    
+    % Verify database has loaded
+    if isempty(handles.db.connection.URL)
+        Event(['Could not open connection to ', handles.dbFile, ':', ...
+            handles.db.connection.Message], 'ERROR');
+    end
+    
+    % Update database summary table
+    handles = UpdateSummary(handles);
+
+    % Update plot using first option
+    plots = cellstr(get(handles.plot_types,'String'));
+    PlotData('axes', handles.plot_axes, 'db', handles.db, 'type', ...
+        plots{get(handles.plot_types,'Value')}, 'range', ...
+        [handles.range_low, handles.range_high], 'stats', handles.plot_stats);
+    clear plots;
+else
+    Event('User did not select a database');
+end
+
+% Clear temporary variables
+clear file path;
+    
+% Set return variable
+if nargout == 1
+    varargout{1} = handles;
+else
+    guidata(hObject, handles);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function export_Callback(hObject, ~, handles)
@@ -235,9 +298,13 @@ if ~isequal(path, 0)
     % Update database summary table
     handles = UpdateSummary(handles);
     
-    % Update statistics table
-    handles = UpdateStatistics(handles);
-    
+    % Update plots
+    plots = cellstr(get(handles.plot_types,'String'));
+    PlotData('type', plots{get(handles.plot_types,'Value')}, ...
+        'range', [handles.range_low, handles.range_high], 'stats', ...
+        handles.plot_stats);
+    clear plots;
+   
 else
     Event('User did not select a path');
 end
@@ -269,9 +336,12 @@ if ~isequal(path, 0)
     % Update database summary table
     handles = UpdateSummary(handles);
     
-    % Update statistics table
-    handles = UpdateStatistics(handles);
-    
+    % Update plots
+    plots = cellstr(get(handles.plot_types,'String'));
+    PlotData('type', plots{get(handles.plot_types,'Value')}, ...
+        'range', [handles.range_low, handles.range_high], 'stats', ...
+        handles.plot_stats);
+    clear plots;
 else
     Event('User did not select a path');
 end
@@ -280,14 +350,53 @@ end
 guidata(hObject, handles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function plot_types_Callback(hObject, eventdata, handles)
+function plot_stats_CellEditCallback(hObject, eventdata, handles)
+% hObject    handle to plot_stats (see GCBO)
+% eventdata  structure with the following fields (see MATLAB.UI.CONTROL.TABLE)
+%	Indices: row and column indices of the cell(s) edited
+%	PreviousData: previous data for the cell(s) edited
+%	EditData: string(s) entered by the user
+%	NewData: EditData or its converted form set on the Data property. Empty if Data was not changed
+%	Error: error string when failed to convert EditData to appropriate value for Data
+% handles    structure with handles and user data (see GUIDATA)
+
+% Update cell contents
+data = get(hObject, 'Data');
+if data{eventdata.Indices(1), 2}
+    Event([data{eventdata.Indices(1), 1}, ' display enabled']);
+elseif ~data{eventdata.Indices(1), 2}
+    Event([data{eventdata.Indices(1), 1}, ' display disabled']);
+end
+set(hObject, 'Data', data);
+
+% Update plots
+plots = cellstr(get(handles.plot_types,'String'));
+PlotData('ax', handles.plot_axes, 'db', handles.db, 'type', ...
+    plots{get(handles.plot_types,'Value')}, 'range', [handles.range_low, ...
+    handles.range_high], 'stats', hObject);
+clear plots;
+
+% Update handles structure
+guidata(hObject, handles);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function plot_types_Callback(hObject, ~, handles)
 % hObject    handle to plot_types (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: contents = cellstr(get(hObject,'String')) returns plot_types contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from plot_types
+% Log choice
+plots = cellstr(get(hObject, 'String'));
+Event(['Plot changed to ', plots{get(hObject, 'Value')}]);
 
+% Update plots
+PlotData('type', plots{get(hObject,'Value')}, 'range', [handles.range_low, ...
+    handles.range_high], 'ax', handles.plot_axes, 'db', handles.db, ...
+    'stats', handles.plot_stats);
+clear plots;
+
+% Update handles structure
+guidata(hObject, handles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function plot_types_CreateFcn(hObject, ~, ~)
@@ -300,20 +409,58 @@ if ispc && isequal(get(hObject,'BackgroundColor'), ...
     set(hObject,'BackgroundColor','white');
 end
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function filter_Callback(hObject, eventdata, handles)
-% hObject    handle to filter (see GCBO)
+function range_Callback(hObject, ~, handles)
+% hObject    handle to range (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: contents = cellstr(get(hObject,'String')) returns filter contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from filter
+% Retrieve range options
+options = cellstr(get(hObject,'String'));
 
+% Update range limits based on selection
+switch options{get(hObject, 'Value')}
+
+case 'All Records'
+    [handles.range_low, handles.range_high] = handles.db.recordRange();
+
+case 'Last 30 Days'
+    handles.range_high = now;
+    handles.range_low = handles.range_high - 30;
+
+case 'Last 90 Days'
+    handles.range_high = now;
+    handles.range_low = handles.range_high - 90;
+    
+case 'Last 1 Year'
+    handles.range_high = now;
+    handles.range_low = handles.range_high - 365;
+
+case 'Custom Dates'
+    a = inputdlg({'Enter lower date:','Enter upper date:'}, ...
+        'Custom Date Range', 1, {datestr(now-30), datestr(now)});
+    handles.range_low = datenum(a{1});
+    handles.range_high = datenum(a{2});
+
+otherwise
+    Event('Invalid range choice selected');
+end
+
+% Update plots
+plots = cellstr(get(handles.plot_types,'String'));
+PlotData('ax', handles.plot_axes, 'db', handles.db, 'type', ...
+    plots{get(handles.plot_types,'Value')}, 'range', [handles.range_low, ...
+    handles.range_high], 'stats', handles.plot_stats);
+
+% Clear temporary variables
+clear options plots a;
+
+% Update handles structure
+guidata(hObject, handles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function filter_CreateFcn(hObject, ~, ~)
-% hObject    handle to filter (see GCBO)
+function range_CreateFcn(hObject, ~, ~)
+% hObject    handle to range (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -325,44 +472,131 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function handles = UpdateSummary(handles)
 
-table = cell(6,2);
 table{1,1} = 'Number of QA Reports';
-table{1,2} = sprintf('%i', handles.db.countPlans());
-table{2,1} = 'QA Reports with RTPlans';
-table{2,2} = sprintf('%0.1f%%', handles.db.countMatchedRecords() * 100);
-table{3,1} = 'Linac Plans';
-table{3,2} = sprintf('%0.1f%%', handles.db.countPlans('linac') / ...
-    (handles.db.countPlans() + 1E-6) * 100);
-table{4,1} = 'TomoTherapy Plans';
-table{4,2} = sprintf('%0.1f%%', handles.db.countPlans('tomo') / ...
-    (handles.db.countPlans() + 1E-6) * 100);
-table{5,1} = 'ViewRay Plans';
-table{5,2} = sprintf('%0.1f%%', handles.db.countPlans('viewray') / ...
-    (handles.db.countPlans() + 1E-6) * 100);
-[low, high] = handles.db.planRange();
-table{6,1} = 'Earliest Record';
+table{1,2} = sprintf('%i', handles.db.countReports());
+
+table{size(table,1)+1,1} = 'QA Reports with RTPlans';
+table{size(table,1),2} = sprintf('%0.1f%%', ...
+    handles.db.countMatchedRecords() * 100);
+table{size(table,1)+1,1} = 'Linac Reports';
+table{size(table,1),2} = sprintf('%0.1f%%', ...
+    handles.db.countReports('linac') / (handles.db.countReports()) * 100);
+table{size(table,1)+1,1} = 'TomoTherapy Reports';
+table{size(table,1),2} = sprintf('%0.1f%%', ...
+    handles.db.countReports('tomo') / (handles.db.countReports()) * 100);
+table{size(table,1)+1,1} = 'TomoTherapy RT Plans';
+table{size(table,1),2} = sprintf('%i', handles.db.countPlans('tomo'));
+table{size(table,1)+1,1} = 'Plans with Sinogram Data';
+table{size(table,1),2} = sprintf('%0.1f%%', handles.db.countPlans('tomo', ...
+    'sinogram IS NOT NULL') / handles.db.countPlans('tomo') * 100);
+
+[low, high] = handles.db.recordRange();
+table{size(table,1)+1,1} = 'Earliest Record';
 if ~strcmp(low, 'null')
-    table{6,2} = datestr(low, 'yyyy-mm-dd');
+    table{size(table,1),2} = datestr(low, 'yyyy-mm-dd');
 else
-    table{6,2} = '';
+    table{size(table,1),2} = '';
 end
-table{7,1} = 'Latest Record';
+table{size(table,1)+1,1} = 'Latest Record';
 if ~strcmp(high, 'null')
-    table{7,2} = datestr(high, 'yyyy-mm-dd');
+    table{size(table,1),2} = datestr(high, 'yyyy-mm-dd');
 else
-    table{7,2} = '';
+    table{size(table,1),2} = '';
 end
-table{8,1} = 'Database File';
-table{8,2} = handles.dbFile;
-table{9,1} = 'Mobius3D Server';
-table{9,2} = handles.m3d.server;
+table{size(table,1)+1,1} = 'Database File';
+table{size(table,1),2} = handles.dbFile;
+table{size(table,1)+1,1} = 'Mobius3D Server';
+table{size(table,1),2} = handles.m3d.server;
 set(handles.dbinfo, 'Data', table);
 clear table low high;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function handles = UpdateStatistics(handles)
+function save_plot_Callback(hObject, ~, handles)
+% hObject    handle to save_plot (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
 
+plots = cellstr(get(handles.plot_types, 'String'));
+ranges = cellstr(get(handles.range, 'String'));
 
+% Prompt user to select a file to save the plot to
+Event('UI window opened to save plot');
+[file, path] = uiputfile([plots{get(handles.plot_types, 'Value')}, '.png'], ...
+    'Save plot as');
+
+% If a directory was selected
+if ~isequal(file, 0)
+
+    % Update default path
+    handles.path = path;
+    Event(['Default file path updated to ', path]);
+    
+    % Open new figure
+    f = figure('Color', [1 1 1], 'Position', [100 100 700 500]);
+    figure(f);
+    a = axes('Parent', f, 'FontSize', 12, 'FontName', 'Arial');
+
+    % Plot data in new figure
+    PlotData('ax', a, 'db', handles.db, 'type', ...
+        plots{get(handles.plot_types,'Value')}, 'range', [handles.range_low, ...
+        handles.range_high], 'stats', handles.plot_stats);
+    
+    % Add title to plot
+    title(a, sprintf('%s, %s', plots{get(handles.plot_types, 'Value')}, ...
+        ranges{get(handles.range, 'Value')}));
+    
+    % Save plot
+    set(f, 'PaperUnits', 'centimeters');
+    set(f, 'PaperPosition', [0 0 35 25]);
+    saveas(f, fullfile(path, file));
+
+    % Close figure
+    close(f);
+    
+    % Display message box
+    msgbox(sprintf('Figure exported successfully to %s', file), ...
+        'Save Completed');
+else
+    Event('User did not select a save file');
+end
+
+% Clear temporary variables
+clear file path plots f a;
+    
+% Update handles structure
+guidata(hObject, handles);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function copy_stats_Callback(hObject, ~, handles)
+% hObject    handle to copy_stats (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Retrieve table contents
+table = vertcat(get(handles.plot_stats, 'ColumnName')', ...
+    get(handles.plot_stats, 'Data'));
+
+% Remove "show" column
+table = horzcat(table(:,1), table(:,3:end));
+
+% Create tab delimited char array of table contents
+str = [];
+for i = 1:size(table,1); 
+r = sprintf('%s\t', table{i,:});
+r(end) = sprintf('\n');
+str = [str r]; %#ok<AGROW>
+end
+clipboard('copy', str);
+
+% Display message box
+msgbox('Plot statistics have been copied to the clipboard', ...
+    'Copy Statistics');
+
+% Clear temporary variables
+clear table str i r;
+    
+% Update handles structure
+guidata(hObject, handles);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function figure1_SizeChangedFcn(hObject, ~, handles) %#ok<*DEFNU>
@@ -382,14 +616,6 @@ pos = get(handles.dbinfo, 'Position') .* ...
 set(handles.dbinfo, 'ColumnWidth', ...
     {floor(0.7*pos(3)) - 6 floor(0.3*pos(3))});
 
-% Get table width
-pos = get(handles.stats, 'Position') .* ...
-    get(handles.uipanel2, 'Position') .* ...
-    get(hObject, 'Position');
-
-% Update column widths to scale to new table size
-set(handles.stats, 'ColumnWidth', ...
-    {floor(0.7*pos(3)) - 6 floor(0.3*pos(3))});
-
 % Clear temporary variables
 clear pos;
+
