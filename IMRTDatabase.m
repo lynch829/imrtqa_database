@@ -29,11 +29,10 @@ methods
             setdbprefs('DataReturnFormat', 'cellarray')
         else
             if exist('Event', 'file') == 2
-                Event(['The SQLite3 database file is missing. Use the ', ...
-                    'schema.sql file to create the file ', db], 'ERROR');
+                Event(['The SQLite3 database file is missing', db], ...
+                    'ERROR');
             else
-                error(['The SQLite3 database file is missing. Use the ', ...
-                    'schema.sql file to create the file ', db]);
+                error(['The SQLite3 database file is missing', db]);
             end
         end
     end
@@ -44,9 +43,9 @@ methods
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    function n = countPlans(obj, type)
-    % Returns the size of the plan cell array based on an optional machine
-    % name
+    function n = countReports(obj, varargin)
+    % Returns the size of the QA report cell array based on an optional 
+    % machine name
 
         % If a type was not provided
         if nargin == 1
@@ -63,7 +62,7 @@ methods
          
             % Return the size of the delta4 table
             sql = ['SELECT COUNT(uid) FROM delta4 WHERE machinetype = ''', ...
-                type, ''''];
+                varargin{1}, ''''];
             cursor = exec(obj.connection, sql);
             cursor = fetch(cursor);  
             n = cursor.Data{1};
@@ -93,6 +92,47 @@ methods
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    function n = countPlans(obj, varargin)
+    % Returns the size of the plan cell array based on an optional 
+    % table and/or SQL where statement
+
+        % If a type was not provided
+        if nargin == 1
+
+            % Query the size of the tomo table
+            sql = 'SELECT COUNT(uid) FROM tomo';
+            cursor = exec(obj.connection, sql);
+            cursor = fetch(cursor);  
+            n = cursor.Data{1};
+            
+            % Query the size of the linac table
+            sql = 'SELECT COUNT(uid) FROM linac';
+            cursor = exec(obj.connection, sql);
+            cursor = fetch(cursor);  
+            n = n + cursor.Data{1};
+            close(cursor);
+            
+        % Otherwise, count only the given type
+        else
+         
+            % Return the size of the listed table
+            sql = ['SELECT COUNT(uid) FROM ', varargin{1}];
+            
+            % Add where statement
+            if nargin == 3
+                sql = [sql, ' WHERE ', varargin{2}];
+            end
+            cursor = exec(obj.connection, sql);
+            cursor = fetch(cursor);  
+            n = cursor.Data{1};
+            close(cursor);
+        end
+        
+        % Clear temporary variables
+        clear sql cursor;
+    end
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     function data = queryColumns(obj, varargin)
     % Returns an array of associated database parameters within the set 
     % filter range given a list of table/column pairs. If multiple columns
@@ -109,10 +149,12 @@ methods
         sql = ['SELECT ', strjoin(varargin(2:2:end), ', '), ' FROM ', ...
             varargin{1}];
         
-        % Add join statements
+        % Add join statements if second db doesn't match first one
         for i = 3:2:nargin-1
-            sql = [sql, ' LEFT JOIN ', varargin{i}, ' ON ', varargin{i}, ...
-                '.uid = ', varargin{1}, '.', varargin{i}, 'uid']; %#ok<*AGROW>
+            if ~strcmp(varargin{1}, varargin{i})
+                sql = [sql, ' LEFT JOIN ', varargin{i}, ' ON ', varargin{i}, ...
+                    '.uid = ', varargin{1}, '.', varargin{i}, 'uid']; %#ok<*AGROW>
+            end
         end
         
         % Add where statements
@@ -255,7 +297,7 @@ methods
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    function [low, high] = planRange(obj)
+    function [low, high] = recordRange(obj)
     % Retrieves the range of timestamps for plan
         
         % Query the highest and lowest plan dates from delta4 table
@@ -264,6 +306,28 @@ methods
         cursor = fetch(cursor);  
         low = cursor.Data{1};
         high = cursor.Data{2};
+        
+        % Query the highest and lowest plan dates from tomo table
+        sql = 'SELECT MIN(plandate), MAX(plandate) FROM tomo';
+        cursor = exec(obj.connection, sql);
+        cursor = fetch(cursor);  
+        low = min(low, cursor.Data{1});
+        high = max(high, cursor.Data{2});
+        
+        % Query the highest and lowest plan dates from linac table
+        sql = 'SELECT MIN(plandate), MAX(plandate) FROM linac';
+        cursor = exec(obj.connection, sql);
+        cursor = fetch(cursor);  
+        low = min(low, cursor.Data{1});
+        high = max(high, cursor.Data{2});
+        
+        % Query the highest and lowest plan dates from mobius table
+        sql = 'SELECT MIN(plandate), MAX(plandate) FROM mobius';
+        cursor = exec(obj.connection, sql);
+        cursor = fetch(cursor);  
+        low = min(low, cursor.Data{1});
+        high = max(high, cursor.Data{2});
+        
         close(cursor);
         clear sql cursor;
     end
