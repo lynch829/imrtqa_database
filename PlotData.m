@@ -67,6 +67,12 @@ end
 axes(ax);
 cla(ax, 'reset');
 
+% Verify data exists
+if db.countReports() == 0
+    Event('No records exist in the database, plotting ignored');
+    return;
+end
+
 % Generate plot based on type
 switch type
 
