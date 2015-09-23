@@ -9,6 +9,7 @@ nodatamsg = ['Based on the provided date range, no data was found for ', ...
 if nargin == 0
     
     varargout{1} = {
+        'IMRT QA by Machine'
         'IMRT QA per Day'
         'Dose Difference (Machine)'
         'Dose Difference (Phantom)'
@@ -18,6 +19,7 @@ if nargin == 0
         'Gamma Pass Rate (Phantom)'
         'Gamma vs. Date (Machine)'
         'Gamma vs. Date (Phantom)'
+        'Cumulative vs. Expected MU'
     };
 
     return;
@@ -68,6 +70,35 @@ cla(ax, 'reset');
 % Generate plot based on type
 switch type
 
+% Plot a pie graph of IMRT QA reports by machine
+case 'IMRT QA by Machine'
+    
+    % Query dose differences, by machine
+    data = db.queryColumns('delta4', 'machine', 'delta4', 'measdate');
+    
+    % Remove dates outside of range range
+    data = data(cell2mat(data(:,2)) > range(1), 1:2);
+    data = data(cell2mat(data(:,2)) < range(2), 1:2);
+    
+    % Determine unique machines
+    machines = unique(data(:,1));
+    c = zeros(size(machines));
+    for i = 1:length(machines)
+        c(i) = sum(strcmp(machines{i}, data(:,1)));
+    end
+    
+    % Plot pie chart
+    pie(c, machines);
+    
+    % Update stats
+    if ~isempty(stats)
+        set(stats, 'Data', {});
+        set(stats, 'ColumnName', {});
+    end
+    
+    % Clear temporary variables
+    clear data machines i c;
+    
 % Plot number of IMRT QA plans performed per day
 case 'IMRT QA per Day'
 
@@ -109,7 +140,7 @@ case 'IMRT QA per Day'
     xlim(xl);
     ylim(yl);
     
-    % Update filter
+    % Update stats
     if ~isempty(stats)
         set(stats, 'Data', {});
         set(stats, 'ColumnName', {});
@@ -222,7 +253,7 @@ case 'Dose Difference (Machine)'
     xlim(xl);
     ylim(yl);
     
-    % Update filter
+    % Update stats
     if ~isempty(stats)
         set(stats, 'Data', rows(1:length(machines), 1:length(columns)));
         set(stats, 'ColumnName', columns);
@@ -336,7 +367,7 @@ case 'Dose Difference (Phantom)'
     xlim(xl);
     ylim(yl);
     
-    % Update filter
+    % Update stats
     if ~isempty(stats)
         set(stats, 'Data', rows(1:length(phantoms), 1:length(columns)));
         set(stats, 'ColumnName', columns);
@@ -440,7 +471,7 @@ case 'Dose vs. Date (Machine)'
     xlim(xl);
     ylim(yl);
     
-    % Update filter
+    % Update stats
     if ~isempty(stats)
         set(stats, 'Data', rows(1:length(machines), 1:length(columns)));
         set(stats, 'ColumnName', columns);
@@ -545,7 +576,7 @@ case 'Dose vs. Date (Phantom)'
     xlim(xl);
     ylim(yl);
     
-    % Update filter
+    % Update stats
     if ~isempty(stats)
         set(stats, 'Data', rows(1:length(phantoms), 1:length(columns)));
         set(stats, 'ColumnName', columns);
@@ -644,7 +675,7 @@ case 'Gamma Pass Rate (Machine)'
     xlim(xl);
     ylim(yl);
     
-    % Update filter
+    % Update stats
     if ~isempty(stats)
         set(stats, 'Data', rows(1:length(machines), 1:length(columns)));
         set(stats, 'ColumnName', columns);
@@ -742,7 +773,7 @@ case 'Gamma Pass Rate (Phantom)'
     xlim(xl);
     ylim(yl);
     
-    % Update filter
+    % Update stats
     if ~isempty(stats)
         set(stats, 'Data', rows(1:length(phantoms), 1:length(columns)));
         set(stats, 'ColumnName', columns);
@@ -824,7 +855,7 @@ case 'Gamma vs. Date (Machine)'
     xlim(xl);
     ylim(yl);
     
-    % Update filter
+    % Update stats
     if ~isempty(stats)
         set(stats, 'Data', rows(1:length(machines), 1:length(columns)));
         set(stats, 'ColumnName', columns);
@@ -907,7 +938,7 @@ case 'Gamma vs. Date (Phantom)'
     xlim(xl);
     ylim(yl);
     
-    % Update filter
+    % Update stats
     if ~isempty(stats)
         set(stats, 'Data', rows(1:length(phantoms), 1:length(columns)));
         set(stats, 'ColumnName', columns);
@@ -915,6 +946,110 @@ case 'Gamma vs. Date (Phantom)'
     
     % Clear temporary variables
     clear data edges d phantoms i m p xl yl;
+
+% Plot ratio of cumulative vs. expected MU, by machine
+case 'Cumulative vs. Expected MU'
+    
+    % Query gamma pass rate, by machine
+    data = db.queryColumns('delta4', 'cumulativemu', 'delta4', 'expectedmu', ...
+        'delta4', 'measdate', 'delta4', 'machine');
+    machines = unique(data(:,4));
+
+    % Remove dates outside of range range
+    data = data(cell2mat(data(:,3)) > range(1), 1:4);
+    data = data(cell2mat(data(:,3)) < range(2), 1:4);
+    
+    % If no data was found
+    if isempty(data)
+        Event(nodatamsg);
+        warndlg(nodatamsg);
+        return;
+    end
+    
+    % Update column names to this plot's statistics
+    columns = {
+        'Dataset'
+        'Show'
+        'N'
+        'Adj R^2'
+        'Slope'
+        'P-Value'
+    };
+
+    % Loop through machines, plotting dose differences over time
+    hold on;
+    for i = 1:length(machines)
+        
+        d = cell2mat(data(strcmp(data(:,4), machines{i}), 1:3));
+        rows{i,1} = machines{i};
+        rows{i,3} = sprintf('%i', size(d,1));
+        
+        if size(d,1) > 1
+            m = fitlm(d(:,3), d(:,1)./d(:,2));
+            rows{i,4} = sprintf('%0.3f', m.Rsquared.Adjusted);
+            rows{i,5} = sprintf('%0.3f%%/day', m.Coefficients{2,1});
+            rows{i,6} = sprintf('%0.3f', m.Coefficients{2,4});
+        else
+            rows{i,4} = '';
+            rows{i,5} = '';
+            rows{i,6} = '';
+        end
+        
+        % If a filter exists, and data is displayed
+        if (isempty(rows{i,2}) || ~strcmp(rows{i,1}, machines{i}) || ...
+                rows{i,2}) && size(d,1) > 0
+            
+            plot(d(:,3), d(:,1)./d(:,2), '.', 'MarkerSize', 30);
+            rows{i,2} = true;
+        else   
+            machines{i} = '';
+            rows{i,2} = false;
+        end
+
+    end
+    
+    hold off;
+    legend(machines(~strcmp(machines, '')));
+    ylabel('Cumulative/Expected MU ratio (%)');
+    xlabel('');
+    datetick('x','mm/dd/yyyy');
+    box on;
+    grid on;
+    
+    % Add colored background
+    xl = xlim;
+    yl = ylim;
+    p = patch([xl(1) xl(2) xl(2) xl(1)], [max(yl(1),0.95) max(yl(1),0.95) ...
+        min(yl(2),1.05) min(yl(2),1.05)], 'green');
+    p.EdgeAlpha = 0;
+    p.FaceAlpha = 0.05;
+    p = patch([xl(1) xl(2) xl(2) xl(1)], [max(yl(1),0.9) max(yl(1),0.9) ...
+        max(yl(1),0.95) max(yl(1),0.95)], 'yellow');
+    p.EdgeAlpha = 0;
+    p.FaceAlpha = 0.05;
+    p = patch([xl(1) xl(2) xl(2) xl(1)], [min(yl(2),1.05) min(yl(2),1.05) ...
+        min(yl(2),1.1) min(yl(2),1.1)], 'yellow');
+    p.EdgeAlpha = 0;
+    p.FaceAlpha = 0.05;
+    p = patch([xl(1) xl(2) xl(2) xl(1)], [yl(1) yl(1) ...
+        max(yl(1),0.9) max(yl(1),0.9)], 'red');
+    p.EdgeAlpha = 0;
+    p.FaceAlpha = 0.05;
+    p = patch([xl(1) xl(2) xl(2) xl(1)], [min(yl(2),1.1) min(yl(2),1.1) ...
+        yl(2) yl(2)], 'red');
+    p.EdgeAlpha = 0;
+    p.FaceAlpha = 0.05;
+    xlim(xl);
+    ylim(yl);
+    
+    % Update stats
+    if ~isempty(stats)
+        set(stats, 'Data', rows(1:length(machines), 1:length(columns)));
+        set(stats, 'ColumnName', columns);
+    end
+    
+    % Clear temporary variables
+    clear data edges d machines i m p xl yl;
     
 end
 
