@@ -619,6 +619,9 @@ methods
             data{10,1} = 'fieldwidth';
             if isfield(record, 'fieldWidth')
                 data{10,2} = record.fieldWidth;
+            elseif isfield(record, 'frontField') && ...
+                    isfield(record, 'backField')
+                data{10,2} = abs(record.frontField) + abs(record.backField);
             end
             data{11,1} = 'period';
             if isfield(record, 'planType') && isfield(record, 'events') ...
