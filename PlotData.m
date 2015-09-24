@@ -25,6 +25,7 @@ if nargin == 0
         'DTA Pass Rate'
         'TomoTherapy Plan Type'
         'TomoTherapy Plan Pitch'
+        'TomoTherapy Plan Mod Factor'
     };
 
     return;
@@ -1069,7 +1070,7 @@ case 'TomoTherapy Plan Type'
     clear data modes i c;
     
 case 'TomoTherapy Plan Pitch'
-%% Plot TomoTherapy gantry mode use ver time
+%% Plot TomoTherapy pitch histogram
 
     % Query TomoTherapy gantry mode and date
     data = db.queryColumns('tomo', 'pitch', 'tomo', 'plandate');
@@ -1090,8 +1091,8 @@ case 'TomoTherapy Plan Pitch'
     
     % Plot histogram of dates
     d = histcounts(cell2mat(data(:,1)), e);
-    plot((e(1):0.001:e(end)), interp1(e(1:end-1), d, ...
-        (e(1):0.001:e(end))-(e(2)-e(1))/2, 'nearest', 'extrap'), ...
+    plot((e(1):0.0001:e(end)), interp1(e(1:end-1), d, ...
+        (e(1):0.0001:e(end))-(e(2)-e(1))/2, 'nearest', 'extrap'), ...
         'LineWidth', 2);
     xlabel('Pitch (cm/cm)');
     ylabel('Occurrence');
@@ -1102,6 +1103,7 @@ case 'TomoTherapy Plan Pitch'
     columns = {
         'Dataset'
         'Show'
+        'Mean'
         '0.143'
         '0.172'
         '0.215'
@@ -1109,18 +1111,19 @@ case 'TomoTherapy Plan Pitch'
         '0.43'
     };
     
-    rows = cell(1,5);
+    rows = cell(1,8);
     rows{1,1} = 'Pitch';
     rows{1,2} = true;
-    rows{1,3} = sprintf('%0.1f%%', sum(cell2mat(data(:,1)) == ...
-        0.143) / length(data(:,1))*100);
+    rows{1,3} = sprintf('%0.3f', mean(cell2mat(data(:,1))));
     rows{1,4} = sprintf('%0.1f%%', sum(cell2mat(data(:,1)) == ...
-        0.172) / length(data(:,1))*100);
+        0.143) / length(data(:,1))*100);
     rows{1,5} = sprintf('%0.1f%%', sum(cell2mat(data(:,1)) == ...
-        0.215) / length(data(:,1))*100);
+        0.172) / length(data(:,1))*100);
     rows{1,6} = sprintf('%0.1f%%', sum(cell2mat(data(:,1)) == ...
-        0.287) / length(data(:,1))*100);
+        0.215) / length(data(:,1))*100);
     rows{1,7} = sprintf('%0.1f%%', sum(cell2mat(data(:,1)) == ...
+        0.287) / length(data(:,1))*100);
+    rows{1,8} = sprintf('%0.1f%%', sum(cell2mat(data(:,1)) == ...
         0.43) / length(data(:,1))*100);
     
     % Update stats
@@ -1130,7 +1133,69 @@ case 'TomoTherapy Plan Pitch'
     end
     
     % Clear temporary variables
-    clear data d e;
+    clear data d e rows columns;
+
+case 'TomoTherapy Plan Mod Factor'
+%% Plot TomoTherapy plan modulation factor histogram
+
+    % Query TomoTherapy gantry mode and date
+    data = db.queryColumns('tomo', 'planmod', 'tomo', 'plandate');
+
+    % Remove dates outside of range range
+    data = data(cell2mat(data(:,2)) > range(1), 1:2);
+    data = data(cell2mat(data(:,2)) < range(2), 1:2);
+    
+    % If no data was found
+    if isempty(data)
+        Event(nodatamsg);
+        warndlg(nodatamsg);
+        return;
+    end
+  
+    % Define bin edges
+    e = 1:0.25:5;
+    
+    % Plot histogram of dates
+    d = histcounts(cell2mat(data(:,1)), e);
+    plot((e(1):0.001:e(end)), interp1(e(1:end-1), d, ...
+        (e(1):0.001:e(end))-(e(2)-e(1))/2, 'nearest', 'extrap'), ...
+        'LineWidth', 2);
+    xlabel('Plan Modulation Factor');
+    ylabel('Occurrence');
+    box on;
+    grid on;
+    
+    columns = {
+        'Dataset'
+        'Show'
+        'Mean'
+        '(1,2]'
+        '(2,3]'
+        '(3,4]'
+        '(4,5]'
+    };
+    
+    rows = cell(1,7);
+    rows{1,1} = 'Mod Factor';
+    rows{1,2} = true;
+    rows{1,3} = sprintf('%0.3f', mean(cell2mat(data(:,1))));
+    rows{1,4} = sprintf('%0.1f%%', (sum(cell2mat(data(:,1)) <= 2) - ...
+        sum(cell2mat(data(:,1)) < 1)) / length(data(:,1))*100);
+    rows{1,5} = sprintf('%0.1f%%', (sum(cell2mat(data(:,1)) <= 3) - ...
+        sum(cell2mat(data(:,1)) < 2)) / length(data(:,1))*100);
+    rows{1,6} = sprintf('%0.1f%%', (sum(cell2mat(data(:,1)) <= 4) - ...
+        sum(cell2mat(data(:,1)) < 3)) / length(data(:,1))*100);
+    rows{1,7} = sprintf('%0.1f%%', (sum(cell2mat(data(:,1)) <= 5) - ...
+        sum(cell2mat(data(:,1)) < 4)) / length(data(:,1))*100);
+    
+    % Update stats
+    if ~isempty(stats)
+        set(stats, 'Data', rows);
+        set(stats, 'ColumnName', columns);
+    end
+    
+    % Clear temporary variables
+    clear data d e rows columns;
 end
 
 % Clear temporary variables
