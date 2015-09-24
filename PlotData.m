@@ -1039,7 +1039,18 @@ case 'TomoTherapy Plan Type'
             modes{i}), 2)), size(d,2));
     end
     
-    
+    d = d./(repmat(sum(d,1),size(d,1),1));
+    for i = 2:size(d,2)-1
+        if isnan(d(1,i))
+            d(:,i) = (d(:,i+1) + d(:,i-1))/2;
+        end
+    end
+    h = area(e(1:end-1), d');
+    set(h, 'EdgeColor', 'none');
+    datetick('x','mm/dd/yyyy');
+    legend(modes);
+    axis 'tight';
+    grid on;
     
     % Update stats
     if ~isempty(stats)
