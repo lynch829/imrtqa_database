@@ -130,7 +130,8 @@ case 'IMRT QA per Day'
     c = histcounts(data, floor(range(1)):ceil(range(2)));
     c(c == 0) = [];
     [d, e] = histcounts(c);
-    plot(e(1:end-1)+0.5, d);
+    plot((0:0.01:e(end))-(e(2)-e(1))/2, interp1(e(1:end-1), d, ...
+        0:0.01:e(end), 'nearest', 'extrap'), 'LineWidth', 2);
     xlabel('Number of IMRT QA plans per day');
     ylabel('Occurrence');
     box on;
@@ -157,7 +158,7 @@ case 'Dose Difference (Machine)'
     machines = unique(data(:,2));
     
     % Define bin edges
-    edges = -5:0.5:5;
+    e = -5:0.5:5;
     
     % Remove dates outside of range range
     data = data(cell2mat(data(:,3)) > range(1), 1:3);
@@ -213,8 +214,10 @@ case 'Dose Difference (Machine)'
         if (isempty(rows{i,2}) || ~strcmp(rows{i,1}, machines{i}) || ...
                 rows{i,2}) && ~isempty(d)
 
-            c = histcounts(d, edges);
-            plot(edges(1:end-1), c/sum(c));
+            c = histcounts(d, e);
+            plot((e(1):0.01:e(end)), interp1(e(1:end-1), c/sum(c), ...
+                (e(1):0.01:e(end))-(e(2)-e(1))/2, 'nearest', 'extrap'), ...
+                'LineWidth', 2);
             rows{i,2} = true;
         else   
             rows{i,2} = false;
@@ -241,7 +244,7 @@ case 'Dose Difference (Machine)'
     end
     
     % Clear temporary variables
-    clear data edges c d machines i s p ci;
+    clear data e c d machines i s p ci;
     
 case 'Dose Difference (Phantom)'
 %% Plot absolute measured dose difference
@@ -253,7 +256,7 @@ case 'Dose Difference (Phantom)'
     phantoms = phantoms(~strcmp(phantoms, 'Unknown'));
     
     % Define bin edges
-    edges = -5:0.5:5;
+    e = -5:0.5:5;
     
     % Remove dates outside of range range
     data = data(cell2mat(data(:,3)) > range(1), 1:3);
@@ -309,8 +312,10 @@ case 'Dose Difference (Phantom)'
         if (isempty(rows{i,2}) || ~strcmp(rows{i,1}, phantoms{i}) || ...
                 rows{i,2}) && ~isempty(d)
 
-            c = histcounts(d, edges);
-            plot(edges(1:end-1), c/sum(c));
+            c = histcounts(d, e);
+            plot((e(1):0.01:e(end)), interp1(e(1:end-1), c/sum(c), ...
+                (e(1):0.01:e(end))-(e(2)-e(1))/2, 'nearest', 'extrap'), ...
+                'LineWidth', 2);
             rows{i,2} = true;
         else   
             phantoms{i} = '';
@@ -335,7 +340,7 @@ case 'Dose Difference (Phantom)'
     end
     
     % Clear temporary variables
-    clear data edges c d phantoms i s p ci;
+    clear data e c d phantoms i s p ci;
     
 case 'Dose vs. Date (Machine)'
 %% Plot dose difference over time
@@ -416,7 +421,7 @@ case 'Dose vs. Date (Machine)'
     end
     
     % Clear temporary variables
-    clear data edges d machines i m p;
+    clear data e d machines i m p;
    
 case 'Dose vs. Date (Phantom)'
 %% Plot dose difference over time
@@ -498,7 +503,7 @@ case 'Dose vs. Date (Phantom)'
     end
     
     % Clear temporary variables
-    clear data edges d phantoms i m p;
+    clear data e d phantoms i m p;
    
 case 'Gamma Pass Rate (Machine)'
 %% Plot gamma pass rate
@@ -509,7 +514,7 @@ case 'Gamma Pass Rate (Machine)'
     machines = unique(data(:,2));
     
     % Define bin edges
-    edges = 90:0.5:100;
+    e = 90:0.5:100;
     
     % Remove dates outside of range range
     data = data(cell2mat(data(:,3)) > range(1), 1:3);
@@ -557,8 +562,10 @@ case 'Gamma Pass Rate (Machine)'
         if (isempty(rows{i,2}) || ~strcmp(rows{i,1}, machines{i}) || ...
                 rows{i,2}) && ~isempty(d)
 
-            c = histcounts(d, edges);
-            plot(edges(2:end), c/sum(c));
+            c = histcounts(d, e);
+            plot((e(1):0.01:e(end)), interp1(e(1:end-1), c/sum(c), ...
+                (e(1):0.01:e(end))-(e(2)-e(1))/2, 'nearest', 'extrap'), ...
+                'LineWidth', 2);
             rows{i,2} = true;
         else   
             rows{i,2} = false;
@@ -585,7 +592,7 @@ case 'Gamma Pass Rate (Machine)'
     end
     
     % Clear temporary variables
-    clear data edges c d machines i p;
+    clear data e c d machines i p;
     
 case 'Gamma Pass Rate (Phantom)'
 %% Plot gamma pass rate
@@ -597,7 +604,7 @@ case 'Gamma Pass Rate (Phantom)'
     phantoms = phantoms(~strcmp(phantoms, 'Unknown'));
     
     % Define bin edges
-    edges = 90:0.5:100;
+    e = 90:0.5:100;
     
     % Remove dates outside of range range
     data = data(cell2mat(data(:,3)) > range(1), 1:3);
@@ -645,8 +652,10 @@ case 'Gamma Pass Rate (Phantom)'
         if (isempty(rows{i,2}) || ~strcmp(rows{i,1}, phantoms{i}) || ...
                 rows{i,2}) && ~isempty(d)
 
-            c = histcounts(d, edges);
-            plot(edges(1:end-1), c/sum(c));
+            c = histcounts(d, e);
+            plot((e(1):0.01:e(end)), interp1(e(1:end-1), c/sum(c), ...
+                (e(1):0.01:e(end))-(e(2)-e(1))/2, 'nearest', 'extrap'), ...
+                'LineWidth', 2);
             rows{i,2} = true;
         else   
             phantoms{i} = '';
@@ -671,7 +680,7 @@ case 'Gamma Pass Rate (Phantom)'
     end
     
     % Clear temporary variables
-    clear data edges c d phantoms i p;
+    clear data e c d phantoms i p;
     
 case 'Gamma vs. Date (Machine)'
 %% Plot gamma pass rate over time
@@ -738,7 +747,7 @@ case 'Gamma vs. Date (Machine)'
     end
     
     % Clear temporary variables
-    clear data edges d machines i m p;
+    clear data e d machines i m p;
     
 case 'Gamma vs. Date (Phantom)'
 %% Plot gamma pass rate over time
@@ -806,7 +815,7 @@ case 'Gamma vs. Date (Phantom)'
     end
     
     % Clear temporary variables
-    clear data edges d phantoms i m p;
+    clear data e d phantoms i m p;
 
 case 'Cumulative vs. Expected MU'
 %% Plot ratio of cumulative vs. expected MU, by machine
@@ -887,7 +896,7 @@ case 'Cumulative vs. Expected MU'
     end
     
     % Clear temporary variables
-    clear data edges d machines i m p;
+    clear data e d machines i m p;
 
 case 'Phantom Temperature'
 %% Plot phantom temperature histogram
@@ -908,7 +917,9 @@ case 'Phantom Temperature'
     
     % Plot histogram of dates
     [d, e] = histcounts(cell2mat(data(:,1)));
-    plot(e(1:end-1)+0.5, d);
+    plot((e(1):0.01:e(end)), interp1(e(1:end-1), d, ...
+        (e(1):0.01:e(end))-(e(2)-e(1))/2, 'nearest', 'extrap'), ...
+        'LineWidth', 2);
     xlabel('Phantom Temperature (C)');
     ylabel('Occurrence');
     box on;
@@ -945,7 +956,9 @@ case 'Absolute Dose Pass Rate'
     
     % Plot histogram of dates
     [d, e] = histcounts(cell2mat(data(:,1)));
-    plot(e(1:end-1)+0.5, d);
+    plot((e(1):0.01:e(end)), interp1(e(1:end-1), d, ...
+        (e(1):0.01:e(end))-(e(2)-e(1))/2, 'nearest', 'extrap'), ...
+        'LineWidth', 2);
     xlabel('Absolute Dose Criterion Pass Rate (%)');
     ylabel('Occurrence');
     box on;
@@ -982,7 +995,9 @@ case 'DTA Pass Rate'
     
     % Plot histogram of dates
     [d, e] = histcounts(cell2mat(data(:,1)));
-    plot(e(1:end-1)+0.5, d);
+    plot((e(1):0.01:e(end)), interp1(e(1:end-1), d, ...
+        (e(1):0.01:e(end))-(e(2)-e(1))/2, 'nearest', 'extrap'), ...
+        'LineWidth', 2);
     xlabel('DTA Criterion Pass Rate (%)');
     ylabel('Occurrence');
     box on;
@@ -1020,9 +1035,9 @@ case 'TomoTherapy Plan Type'
     modes = unique(data(:,1));
     d = zeros(length(modes), 10);
     for i = 1:size(d,1)
-        d(:,i) = histcounts(cell2mat(data(strcmp(data(:,1), modes{i}), 1)));
+        [d(i,:), e] = histcounts(cell2mat(data(strcmp(data(:,1), ...
+            modes{i}), 2)), size(d,2));
     end
-    
     
     % Update stats
     if ~isempty(stats)
