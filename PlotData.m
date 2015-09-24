@@ -133,18 +133,7 @@ case 'IMRT QA per Day'
     grid on;
     
     % Add colored background
-    xl = xlim;
-    yl = ylim;
-    p = patch([max(xl(1), 0) min(xl(2), 5) min(xl(2), 5) max(xl(1), 0)], ...
-        [yl(1) yl(1) yl(2) yl(2)], 'green');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([max(xl(1), 5) xl(2) xl(2) max(xl(1), 5)], ...
-        [yl(1) yl(1) yl(2) yl(2)], 'yellow');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    xlim(xl);
-    ylim(yl);
+    plotbg('vertical', [0 0 5 10]);
     
     % Update stats
     if ~isempty(stats)
@@ -239,25 +228,7 @@ case 'Dose Difference (Machine)'
     grid on;
     
     % Add colored background
-    xl = xlim;
-    yl = ylim;
-    p = patch([-2 2 2 -2], [yl(1) yl(1) yl(2) yl(2)], 'green');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([-3 -2 -2 -3], [yl(1) yl(1) yl(2) yl(2)], 'yellow');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([2 3 3 2], [yl(1) yl(1) yl(2) yl(2)], 'yellow');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([-5 -3 -3 -5], [yl(1) yl(1) yl(2) yl(2)], 'red');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([3 5 5 3], [yl(1) yl(1) yl(2) yl(2)], 'red');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    xlim(xl);
-    ylim(yl);
+    plotbg('vertical', [-3 -2 2 3]);
     
     % Update stats
     if ~isempty(stats)
@@ -341,8 +312,6 @@ case 'Dose Difference (Phantom)'
             phantoms{i} = '';
             rows{i,2} = false;
         end
-        
-        
     end
     
     hold off;
@@ -353,25 +322,7 @@ case 'Dose Difference (Phantom)'
     grid on;
     
     % Add colored background
-    xl = xlim;
-    yl = ylim;
-    p = patch([-2 2 2 -2], [yl(1) yl(1) yl(2) yl(2)], 'green');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([-3 -2 -2 -3], [yl(1) yl(1) yl(2) yl(2)], 'yellow');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([2 3 3 2], [yl(1) yl(1) yl(2) yl(2)], 'yellow');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([-5 -3 -3 -5], [yl(1) yl(1) yl(2) yl(2)], 'red');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([3 5 5 3], [yl(1) yl(1) yl(2) yl(2)], 'red');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    xlim(xl);
-    ylim(yl);
+    plotbg('vertical', [-3 -2 2 3]);
     
     % Update stats
     if ~isempty(stats)
@@ -452,30 +403,7 @@ case 'Dose vs. Date (Machine)'
     grid on;
     
     % Add colored background
-    xl = xlim;
-    yl = ylim;
-    p = patch([xl(1) xl(2) xl(2) xl(1)], [max(yl(1),-2) max(yl(1),-2) ...
-        min(yl(2),2) min(yl(2),2)], 'green');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([xl(1) xl(2) xl(2) xl(1)], [max(yl(1),-3) max(yl(1),-3) ...
-        max(yl(1),-2) max(yl(1),-2)], 'yellow');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([xl(1) xl(2) xl(2) xl(1)], [min(yl(2),2) min(yl(2),2) ...
-        min(yl(2),3) min(yl(2),3)], 'yellow');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([xl(1) xl(2) xl(2) xl(1)], [yl(1) yl(1) ...
-        max(yl(1),-3) max(yl(1),-3)], 'red');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([xl(1) xl(2) xl(2) xl(1)], [min(yl(2),3) min(yl(2),3) ...
-        yl(2) yl(2)], 'red');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    xlim(xl);
-    ylim(yl);
+    plotbg('horizontal', [-3 -2 2 3]);
     
     % Update stats
     if ~isempty(stats)
@@ -557,30 +485,7 @@ case 'Dose vs. Date (Phantom)'
     grid on;
     
     % Add colored background
-    xl = xlim;
-    yl = ylim;
-    p = patch([xl(1) xl(2) xl(2) xl(1)], [max(yl(1),-2) max(yl(1),-2) ...
-        min(yl(2),2) min(yl(2),2)], 'green');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([xl(1) xl(2) xl(2) xl(1)], [max(yl(1),-3) max(yl(1),-3) ...
-        max(yl(1),-2) max(yl(1),-2)], 'yellow');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([xl(1) xl(2) xl(2) xl(1)], [min(yl(2),2) min(yl(2),2) ...
-        min(yl(2),3) min(yl(2),3)], 'yellow');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([xl(1) xl(2) xl(2) xl(1)], [yl(1) yl(1) ...
-        max(yl(1),-3) max(yl(1),-3)], 'red');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([xl(1) xl(2) xl(2) xl(1)], [min(yl(2),3) min(yl(2),3) ...
-        yl(2) yl(2)], 'red');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    xlim(xl);
-    ylim(yl);
+    plotbg('horizontal', [-3 -2 2 3]);
     
     % Update stats
     if ~isempty(stats)
@@ -667,19 +572,7 @@ case 'Gamma Pass Rate (Machine)'
     grid on;
    
     % Add colored background
-    xl = xlim;
-    yl = ylim;
-    p = patch([96 100 100 96], [yl(1) yl(1) yl(2) yl(2)], 'green');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([94 96 96 94], [yl(1) yl(1) yl(2) yl(2)], 'yellow');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([90 94 94 90], [yl(1) yl(1) yl(2) yl(2)], 'red');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    xlim(xl);
-    ylim(yl);
+    plotbg('vertical', [94 96 100 100]);
     
     % Update stats
     if ~isempty(stats)
@@ -765,19 +658,7 @@ case 'Gamma Pass Rate (Phantom)'
     grid on;
     
     % Add colored background
-    xl = xlim;
-    yl = ylim;
-    p = patch([96 100 100 96], [yl(1) yl(1) yl(2) yl(2)], 'green');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([94 96 96 94], [yl(1) yl(1) yl(2) yl(2)], 'yellow');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([90 94 94 90], [yl(1) yl(1) yl(2) yl(2)], 'red');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    xlim(xl);
-    ylim(yl);
+    plotbg('vertical', [94 96 100 100]);
     
     % Update stats
     if ~isempty(stats)
@@ -844,22 +725,7 @@ case 'Gamma vs. Date (Machine)'
     grid on;
     
     % Add colored background
-    xl = xlim;
-    yl = ylim;
-    p = patch([xl(1) xl(2) xl(2) xl(1)], [max(yl(1),96) max(yl(1),96) ...
-        min(yl(2),100) min(yl(2),100)], 'green');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([xl(1) xl(2) xl(2) xl(1)], [max(yl(1),94) max(yl(1),94) ...
-        max(yl(1),96) max(yl(1),96)], 'yellow');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([xl(1) xl(2) xl(2) xl(1)], [yl(1) yl(1) ...
-        max(yl(1),94) max(yl(1),94)], 'red');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    xlim(xl);
-    ylim(yl);
+    plotbg('horizontal', [94 96 100 100]);
     
     % Update stats
     if ~isempty(stats)
@@ -927,22 +793,7 @@ case 'Gamma vs. Date (Phantom)'
     grid on;
     
     % Add colored background
-    xl = xlim;
-    yl = ylim;
-    p = patch([xl(1) xl(2) xl(2) xl(1)], [max(yl(1),96) max(yl(1),96) ...
-        min(yl(2),100) min(yl(2),100)], 'green');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([xl(1) xl(2) xl(2) xl(1)], [max(yl(1),94) max(yl(1),94) ...
-        max(yl(1),96) max(yl(1),96)], 'yellow');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([xl(1) xl(2) xl(2) xl(1)], [yl(1) yl(1) ...
-        max(yl(1),94) max(yl(1),94)], 'red');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    xlim(xl);
-    ylim(yl);
+    plotbg('horizontal', [94 96 100 100]);
     
     % Update stats
     if ~isempty(stats)
@@ -1023,30 +874,7 @@ case 'Cumulative vs. Expected MU'
     grid on;
     
     % Add colored background
-    xl = xlim;
-    yl = ylim;
-    p = patch([xl(1) xl(2) xl(2) xl(1)], [max(yl(1),0.95) max(yl(1),0.95) ...
-        min(yl(2),1.05) min(yl(2),1.05)], 'green');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([xl(1) xl(2) xl(2) xl(1)], [max(yl(1),0.9) max(yl(1),0.9) ...
-        max(yl(1),0.95) max(yl(1),0.95)], 'yellow');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([xl(1) xl(2) xl(2) xl(1)], [min(yl(2),1.05) min(yl(2),1.05) ...
-        min(yl(2),1.1) min(yl(2),1.1)], 'yellow');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([xl(1) xl(2) xl(2) xl(1)], [yl(1) yl(1) ...
-        max(yl(1),0.9) max(yl(1),0.9)], 'red');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    p = patch([xl(1) xl(2) xl(2) xl(1)], [min(yl(2),1.1) min(yl(2),1.1) ...
-        yl(2) yl(2)], 'red');
-    p.EdgeAlpha = 0;
-    p.FaceAlpha = 0.05;
-    xlim(xl);
-    ylim(yl);
+    plotbg('horizontal', [0.9 0.95 1.05 1.10]);
     
     % Update stats
     if ~isempty(stats)
@@ -1061,3 +889,71 @@ end
 
 % Clear temporary variables
 clear type range stats rows columns;
+
+end
+
+function plotbg(orientation, range)
+% Adds a red/yellow/green background to the currently selected plot
+%
+% Inputs: 
+%   orientation: string, either 'vertical' or 'horizontal'
+%   range: 4-element vector, in ascending order, indicating the lower red,
+%       yellow, and upper yellow, red limits (in that order)
+
+xl = xlim;
+yl = ylim;
+
+switch orientation
+    
+case 'vertical'
+    
+    p = patch([max(xl(1), range(2)) min(xl(2), range(3)) min(xl(2), ...
+        range(3)) max(xl(1), range(2))], [yl(1) yl(1) yl(2) yl(2)], 'green');
+    p.EdgeAlpha = 0;
+    p.FaceAlpha = 0.05;
+    p = patch([max(xl(1), range(1)) max(xl(1), range(2)) max(xl(1), ...
+        range(2)) max(xl(1), range(1))], [yl(1) yl(1) yl(2) yl(2)], 'yellow');
+    p.EdgeAlpha = 0;
+    p.FaceAlpha = 0.05;
+    p = patch([min(xl(2), range(3)) min(xl(2), range(4)) min(xl(2), ...
+        range(4)) min(xl(2), range(3))], [yl(1) yl(1) yl(2) yl(2)], 'yellow');
+    p.EdgeAlpha = 0;
+    p.FaceAlpha = 0.05;
+    p = patch([xl(1) max(xl(1), range(1)) max(xl(1), range(1)) xl(1)], ...
+        [yl(1) yl(1) yl(2) yl(2)], 'red');
+    p.EdgeAlpha = 0;
+    p.FaceAlpha = 0.05;
+    p = patch([min(xl(2), range(4)) xl(2) xl(2) min(xl(2), range(4))], ...
+        [yl(1) yl(1) yl(2) yl(2)], 'red');
+    p.EdgeAlpha = 0;
+    p.FaceAlpha = 0.05;
+    
+case 'horizontal'
+
+    p = patch([xl(1) xl(2) xl(2) xl(1)], [max(yl(1), range(2)) max(yl(1), ...
+        range(2)) min(yl(2), range(3)) min(yl(2), range(3))], 'green');
+    p.EdgeAlpha = 0;
+    p.FaceAlpha = 0.05;
+    p = patch([xl(1) xl(2) xl(2) xl(1)], [max(yl(1), range(1)) max(yl(1), ...
+        range(1)) max(yl(1), range(2)) max(yl(1), range(2))], 'yellow');
+    p.EdgeAlpha = 0;
+    p.FaceAlpha = 0.05;
+    p = patch([xl(1) xl(2) xl(2) xl(1)], [min(yl(2), range(3)) min(yl(2), ...
+        range(3)) min(yl(2), range(4)) min(yl(2), range(4))], 'yellow');
+    p.EdgeAlpha = 0;
+    p.FaceAlpha = 0.05;
+    p = patch([xl(1) xl(2) xl(2) xl(1)], [yl(1) yl(1) ...
+        max(yl(1), range(1)) max(yl(1), range(1))], 'red');
+    p.EdgeAlpha = 0;
+    p.FaceAlpha = 0.05;
+    p = patch([xl(1) xl(2) xl(2) xl(1)], [min(yl(2), range(4)) min(yl(2), ...
+        range(4)) yl(2) yl(2)], 'red');
+    p.EdgeAlpha = 0;
+    p.FaceAlpha = 0.05;
+    
+end
+
+xlim(xl);
+ylim(yl);
+
+end
