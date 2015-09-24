@@ -1,5 +1,5 @@
 function varargout = PlotData(varargin)
-
+% Queries the IMRT QA database and plots results based on provided type
 
 % Define text for warning message if no data is found
 nodatamsg = ['Based on the provided date range, no data was found for ', ...
@@ -20,6 +20,10 @@ if nargin == 0
         'Gamma vs. Date (Machine)'
         'Gamma vs. Date (Phantom)'
         'Cumulative vs. Expected MU'
+        'Phantom Temperature'
+        'Absolute Dose Pass Rate'
+        'DTA Pass Rate'
+        'TomoTherapy Plan Type'
     };
 
     return;
@@ -76,9 +80,9 @@ end
 % Generate plot based on type
 switch type
 
-% Plot a pie graph of IMRT QA reports by machine
 case 'IMRT QA by Machine'
-    
+%% Plot a pie graph of IMRT QA reports by machine
+
     % Query dose differences, by machine
     data = db.queryColumns('delta4', 'machine', 'delta4', 'measdate');
     
@@ -105,8 +109,8 @@ case 'IMRT QA by Machine'
     % Clear temporary variables
     clear data machines i c;
     
-% Plot number of IMRT QA plans performed per day
 case 'IMRT QA per Day'
+%% Plot number of IMRT QA plans performed per day
 
     % Query measured dates for Delta4 records
     data = cell2mat(db.queryColumns('delta4', 'measdate'));
@@ -142,11 +146,11 @@ case 'IMRT QA per Day'
     end
     
     % Clear temporary variables
-    clear data c d e p xl yl;
+    clear data c d e p;
 
-% Plot absolute measured dose difference
 case 'Dose Difference (Machine)'
-    
+%% Plot absolute measured dose difference
+
     % Query dose differences, by machine
     data = db.queryColumns('delta4', 'dosedev', 'delta4', 'machine', ...
         'delta4', 'measdate');
@@ -237,11 +241,11 @@ case 'Dose Difference (Machine)'
     end
     
     % Clear temporary variables
-    clear data edges c d machines i s p ci xl yl;
+    clear data edges c d machines i s p ci;
     
-% Plot absolute measured dose difference
 case 'Dose Difference (Phantom)'
-    
+%% Plot absolute measured dose difference
+
     % Query dose differences, by phantom
     data = db.queryColumns('delta4', 'dosedev', 'delta4', 'phantom', ...
         'delta4', 'measdate');
@@ -331,11 +335,11 @@ case 'Dose Difference (Phantom)'
     end
     
     % Clear temporary variables
-    clear data edges c d phantoms i s p ci xl yl;
+    clear data edges c d phantoms i s p ci;
     
-% Plot dose difference over time
 case 'Dose vs. Date (Machine)'
-    
+%% Plot dose difference over time
+
     % Query dose differences, by machine
     data = db.queryColumns('delta4', 'dosedev', 'delta4', 'measdate', ...
         'delta4', 'machine');
@@ -412,11 +416,11 @@ case 'Dose vs. Date (Machine)'
     end
     
     % Clear temporary variables
-    clear data edges d machines i m p xl yl;
-    
-% Plot dose difference over time
+    clear data edges d machines i m p;
+   
 case 'Dose vs. Date (Phantom)'
-    
+%% Plot dose difference over time
+
     % Query dose differences, by machine
     data = db.queryColumns('delta4', 'dosedev', 'delta4', 'measdate', ...
         'delta4', 'phantom');
@@ -494,11 +498,11 @@ case 'Dose vs. Date (Phantom)'
     end
     
     % Clear temporary variables
-    clear data edges d phantoms i m p xl yl;
-    
-% Plot gamma pass rate
+    clear data edges d phantoms i m p;
+   
 case 'Gamma Pass Rate (Machine)'
-    
+%% Plot gamma pass rate
+
     % Query gamma pass rate, by machine
     data = db.queryColumns('delta4', 'gammapassrate', 'delta4', 'machine', ...
         'delta4', 'measdate');
@@ -581,11 +585,11 @@ case 'Gamma Pass Rate (Machine)'
     end
     
     % Clear temporary variables
-    clear data edges c d machines i p xl yl;
+    clear data edges c d machines i p;
     
-% Plot gamma pass rate
 case 'Gamma Pass Rate (Phantom)'
-    
+%% Plot gamma pass rate
+
     % Query gamma pass rate, by phantom
     data = db.queryColumns('delta4', 'gammapassrate', 'delta4', 'phantom', ...
         'delta4', 'measdate');
@@ -667,11 +671,11 @@ case 'Gamma Pass Rate (Phantom)'
     end
     
     % Clear temporary variables
-    clear data edges c d phantoms i p xl yl;
+    clear data edges c d phantoms i p;
     
-% Plot gamma pass rate over time
 case 'Gamma vs. Date (Machine)'
-    
+%% Plot gamma pass rate over time
+
     % Query gamma pass rate, by machine
     data = db.queryColumns('delta4', 'gammapassrate', 'delta4', 'measdate', ...
         'delta4', 'machine');
@@ -734,11 +738,11 @@ case 'Gamma vs. Date (Machine)'
     end
     
     % Clear temporary variables
-    clear data edges d machines i m p xl yl;
+    clear data edges d machines i m p;
     
-% Plot gamma pass rate over time
 case 'Gamma vs. Date (Phantom)'
-    
+%% Plot gamma pass rate over time
+
     % Query gamma pass rate, by machine
     data = db.queryColumns('delta4', 'gammapassrate', 'delta4', 'measdate', ...
         'delta4', 'phantom');
@@ -802,11 +806,11 @@ case 'Gamma vs. Date (Phantom)'
     end
     
     % Clear temporary variables
-    clear data edges d phantoms i m p xl yl;
+    clear data edges d phantoms i m p;
 
-% Plot ratio of cumulative vs. expected MU, by machine
 case 'Cumulative vs. Expected MU'
-    
+%% Plot ratio of cumulative vs. expected MU, by machine
+
     % Query gamma pass rate, by machine
     data = db.queryColumns('delta4', 'cumulativemu', 'delta4', 'expectedmu', ...
         'delta4', 'measdate', 'delta4', 'machine');
@@ -883,8 +887,151 @@ case 'Cumulative vs. Expected MU'
     end
     
     % Clear temporary variables
-    clear data edges d machines i m p xl yl;
+    clear data edges d machines i m p;
+
+case 'Phantom Temperature'
+%% Plot phantom temperature histogram
+
+    % Query phantom temperature
+    data = db.queryColumns('delta4', 'temperature', 'delta4', 'measdate');
     
+    % Remove dates outside of range range
+    data = data(cell2mat(data(:,2)) > range(1), 1:2);
+    data = data(cell2mat(data(:,2)) < range(2), 1:2);
+    
+    % If no data was found
+    if isempty(data)
+        Event(nodatamsg);
+        warndlg(nodatamsg);
+        return;
+    end
+    
+    % Plot histogram of dates
+    [d, e] = histcounts(cell2mat(data(:,1)));
+    plot(e(1:end-1)+0.5, d);
+    xlabel('Phantom Temperature (C)');
+    ylabel('Occurrence');
+    box on;
+    grid on;
+    
+    % Add colored background
+    plotbg('vertical', [21 22 25 26]);
+    
+    % Update stats
+    if ~isempty(stats)
+        set(stats, 'Data', {});
+        set(stats, 'ColumnName', {});
+    end
+    
+    % Clear temporary variables
+    clear data d e;
+
+case 'Absolute Dose Pass Rate'
+%% Plot Delta4 absolute dose pass rate histogram
+
+    % Query phantom temperature
+    data = db.queryColumns('delta4', 'abspassrate', 'delta4', 'measdate');
+    
+    % Remove dates outside of range range
+    data = data(cell2mat(data(:,2)) > range(1), 1:2);
+    data = data(cell2mat(data(:,2)) < range(2), 1:2);
+    
+    % If no data was found
+    if isempty(data)
+        Event(nodatamsg);
+        warndlg(nodatamsg);
+        return;
+    end
+    
+    % Plot histogram of dates
+    [d, e] = histcounts(cell2mat(data(:,1)));
+    plot(e(1:end-1)+0.5, d);
+    xlabel('Absolute Dose Criterion Pass Rate (%)');
+    ylabel('Occurrence');
+    box on;
+    grid on;
+    
+    % Add colored background
+    plotbg('vertical', [0 0 100 100]);
+    
+    % Update stats
+    if ~isempty(stats)
+        set(stats, 'Data', {});
+        set(stats, 'ColumnName', {});
+    end
+    
+    % Clear temporary variables
+    clear data d e;
+    
+case 'DTA Pass Rate'
+%% Plot Delta4 DTA pass rate histogram
+
+    % Query phantom temperature
+    data = db.queryColumns('delta4', 'dtapassrate', 'delta4', 'measdate');
+    
+    % Remove dates outside of range range
+    data = data(cell2mat(data(:,2)) > range(1), 1:2);
+    data = data(cell2mat(data(:,2)) < range(2), 1:2);
+    
+    % If no data was found
+    if isempty(data)
+        Event(nodatamsg);
+        warndlg(nodatamsg);
+        return;
+    end
+    
+    % Plot histogram of dates
+    [d, e] = histcounts(cell2mat(data(:,1)));
+    plot(e(1:end-1)+0.5, d);
+    xlabel('DTA Criterion Pass Rate (%)');
+    ylabel('Occurrence');
+    box on;
+    grid on;
+    
+    % Add colored background
+    plotbg('vertical', [0 0 100 100]);
+    
+    % Update stats
+    if ~isempty(stats)
+        set(stats, 'Data', {});
+        set(stats, 'ColumnName', {});
+    end
+    
+    % Clear temporary variables
+    clear data d e;
+    
+case 'TomoTherapy Plan Type'
+%% Plot TomoTherapy gantry mode use ver time
+
+    % Query TomoTherapy gantry mode and date
+    data = db.queryColumns('tomo', 'gantrymode', 'tomo', 'plandate');
+
+    % Remove dates outside of range range
+    data = data(cell2mat(data(:,2)) > range(1), 1:2);
+    data = data(cell2mat(data(:,2)) < range(2), 1:2);
+    
+    % If no data was found
+    if isempty(data)
+        Event(nodatamsg);
+        warndlg(nodatamsg);
+        return;
+    end
+    
+    modes = unique(data(:,1));
+    d = zeros(length(modes), 10);
+    for i = 1:size(d,1)
+        d(:,i) = histcounts(cell2mat(data(strcmp(data(:,1), modes{i}), 1)));
+    end
+    
+    
+    % Update stats
+    if ~isempty(stats)
+        set(stats, 'Data', {});
+        set(stats, 'ColumnName', {});
+    end
+    
+    % Clear temporary variables
+    clear data modes d i
 end
 
 % Clear temporary variables
@@ -892,6 +1039,7 @@ clear type range stats rows columns;
 
 end
 
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function plotbg(orientation, range)
 % Adds a red/yellow/green background to the currently selected plot
 %
@@ -955,5 +1103,7 @@ end
 
 xlim(xl);
 ylim(yl);
+
+clear xl yl p;
 
 end
