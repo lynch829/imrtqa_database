@@ -24,6 +24,7 @@ if nargin == 0
         'Absolute Dose Pass Rate'
         'DTA Pass Rate'
         'TomoTherapy Plan Type'
+        'TomoTherapy Plan Pitch'
     };
 
     return;
@@ -90,11 +91,19 @@ case 'IMRT QA by Machine'
     data = data(cell2mat(data(:,2)) > range(1), 1:2);
     data = data(cell2mat(data(:,2)) < range(2), 1:2);
     
+    % Set column names
+    columns = {'Machine', 'Show', 'N', '%'};
+    
     % Determine unique machines
     machines = unique(data(:,1));
     c = zeros(size(machines));
+    rows = cell(length(machines), 4);
     for i = 1:length(machines)
         c(i) = sum(strcmp(machines{i}, data(:,1)));
+        rows{i,1} = machines{i};
+        rows{i,2} = true;
+        rows{i,3} = sprintf('%i', c(i));
+        rows{i,4} = sprintf('%0.1f%%', c(i)/size(data,1)*100);
     end
     
     % Plot pie chart
@@ -102,8 +111,8 @@ case 'IMRT QA by Machine'
     
     % Update stats
     if ~isempty(stats)
-        set(stats, 'Data', {});
-        set(stats, 'ColumnName', {});
+        set(stats, 'Data', rows);
+        set(stats, 'ColumnName', columns);
     end
     
     % Clear temporary variables
@@ -1032,34 +1041,96 @@ case 'TomoTherapy Plan Type'
         return;
     end
     
+    % Set column names
+    columns = {'Machine', 'Show', 'N', '%'};
+    
+    % Determine unique modes
     modes = unique(data(:,1));
-    d = zeros(length(modes), 10);
-    for i = 1:size(d,1)
-        [d(i,:), e] = histcounts(cell2mat(data(strcmp(data(:,1), ...
-            modes{i}), 2)), size(d,2));
+    c = zeros(size(modes));
+    rows = cell(length(modes), 4);
+    for i = 1:length(modes)
+        c(i) = sum(strcmp(modes{i}, data(:,1)));
+        rows{i,1} = modes{i};
+        rows{i,2} = true;
+        rows{i,3} = sprintf('%i', c(i));
+        rows{i,4} = sprintf('%0.1f%%', c(i)/size(data,1)*100);
     end
     
-    d = d./(repmat(sum(d,1),size(d,1),1));
-    for i = 2:size(d,2)-1
-        if isnan(d(1,i))
-            d(:,i) = (d(:,i+1) + d(:,i-1))/2;
-        end
-    end
-    h = area(e(1:end-1), d');
-    set(h, 'EdgeColor', 'none');
-    datetick('x','mm/dd/yyyy');
-    legend(modes);
-    axis 'tight';
-    grid on;
+    % Plot pie chart
+    pie(c, modes);
     
     % Update stats
     if ~isempty(stats)
-        set(stats, 'Data', {});
-        set(stats, 'ColumnName', {});
+        set(stats, 'Data', rows);
+        set(stats, 'ColumnName', columns);
     end
     
     % Clear temporary variables
-    clear data modes d i
+    clear data modes i c;
+    
+case 'TomoTherapy Plan Pitch'
+%% Plot TomoTherapy gantry mode use ver time
+
+    % Query TomoTherapy gantry mode and date
+    data = db.queryColumns('tomo', 'pitch', 'tomo', 'plandate');
+
+    % Remove dates outside of range range
+    data = data(cell2mat(data(:,2)) > range(1), 1:2);
+    data = data(cell2mat(data(:,2)) < range(2), 1:2);
+    
+    % If no data was found
+    if isempty(data)
+        Event(nodatamsg);
+        warndlg(nodatamsg);
+        return;
+    end
+  
+    % Define bin edges
+    e = 0.1:0.01:0.5;
+    
+    % Plot histogram of dates
+    d = histcounts(cell2mat(data(:,1)), e);
+    plot((e(1):0.001:e(end)), interp1(e(1:end-1), d, ...
+        (e(1):0.001:e(end))-(e(2)-e(1))/2, 'nearest', 'extrap'), ...
+        'LineWidth', 2);
+    xlabel('Pitch (cm/cm)');
+    ylabel('Occurrence');
+    box on;
+    grid on;
+    xlim([0.1 0.45]);
+    
+    columns = {
+        'Dataset'
+        'Show'
+        '0.143'
+        '0.172'
+        '0.215'
+        '0.287'
+        '0.43'
+    };
+    
+    rows = cell(1,5);
+    rows{1,1} = 'Pitch';
+    rows{1,2} = true;
+    rows{1,3} = sprintf('%0.1f%%', sum(cell2mat(data(:,1)) == ...
+        0.143) / length(data(:,1))*100);
+    rows{1,4} = sprintf('%0.1f%%', sum(cell2mat(data(:,1)) == ...
+        0.172) / length(data(:,1))*100);
+    rows{1,5} = sprintf('%0.1f%%', sum(cell2mat(data(:,1)) == ...
+        0.215) / length(data(:,1))*100);
+    rows{1,6} = sprintf('%0.1f%%', sum(cell2mat(data(:,1)) == ...
+        0.287) / length(data(:,1))*100);
+    rows{1,7} = sprintf('%0.1f%%', sum(cell2mat(data(:,1)) == ...
+        0.43) / length(data(:,1))*100);
+    
+    % Update stats
+    if ~isempty(stats)
+        set(stats, 'Data', rows);
+        set(stats, 'ColumnName', columns);
+    end
+    
+    % Clear temporary variables
+    clear data d e;
 end
 
 % Clear temporary variables
