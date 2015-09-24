@@ -656,15 +656,15 @@ methods
                 data{14,2} = record.modFactor;
             end
             data{15,1} = 'actualmod';
-            if isfield(record, 'agnostic')
-                lots = reshape(record.agnostic, 1, []);
+            if isfield(record, 'sinogram')
+                lots = reshape(record.sinogram, 1, []);
                 lots(lots == 0) = [];
                 data{15,2} = max(lots)/mean(lots);
                 clear lots;
             end
             data{16,1} = 'sinogram';
-            if isfield(record, 'agnostic')
-                data{16,2} = sprintf('%0.32e\t', record.agnostic);
+            if isfield(record, 'sinogram')
+                data{16,2} = sprintf('%0.32e\t', record.sinogram);
             end
             data{17,1} = 'rtplan';
             data{17,2} = savejson('rtplan', record);
