@@ -441,9 +441,10 @@ case 'Last 1 Year'
 case 'Custom Dates'
     a = inputdlg({'Enter lower date:','Enter upper date:'}, ...
         'Custom Date Range', 1, {datestr(now-30), datestr(now)});
-    handles.range_low = datenum(a{1});
-    handles.range_high = datenum(a{2});
-
+    if ~isempty(a)
+        handles.range_low = datenum(a{1});
+        handles.range_high = datenum(a{2});
+    end
 otherwise
     Event('Invalid range choice selected');
 end
