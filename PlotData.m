@@ -129,8 +129,8 @@ case 'IMRT QA per Day'
     % Plot histogram of dates
     c = histcounts(data, floor(range(1)):ceil(range(2)));
     c(c == 0) = [];
-    [d, e] = histcounts(c);
-    plot((0:0.01:e(end))-(e(2)-e(1))/2, interp1(e(1:end-1), d, ...
+    [d, e] = histcounts(c, 0:max(c));
+    plot((0:0.01:e(end)), interp1(e(1:end-1), d, ...
         0:0.01:e(end), 'nearest', 'extrap'), 'LineWidth', 2);
     xlabel('Number of IMRT QA plans per day');
     ylabel('Occurrence');
@@ -1038,6 +1038,8 @@ case 'TomoTherapy Plan Type'
         [d(i,:), e] = histcounts(cell2mat(data(strcmp(data(:,1), ...
             modes{i}), 2)), size(d,2));
     end
+    
+    
     
     % Update stats
     if ~isempty(stats)
