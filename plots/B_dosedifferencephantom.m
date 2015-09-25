@@ -27,11 +27,6 @@ end
 % Query dose differences, by phantom
 data = db.queryColumns('delta4', 'dosedev', 'delta4', 'phantom', ...
     'where', 'delta4', 'measdate', range);
-phantoms = unique(data(:,2));
-phantoms = phantoms(~strcmp(phantoms, 'Unknown'));
-
-% Define bin edges
-e = -5:0.5:5;
 
 % If no data was found
 if isempty(data)
@@ -39,6 +34,13 @@ if isempty(data)
     warndlg(nodatamsg);
     return;
 end
+
+% Define bin edges
+e = -5:0.5:5;
+
+% Extract unique list of phantoms
+phantoms = unique(data(:,2));
+phantoms = phantoms(~strcmp(phantoms, 'Unknown'));
 
 % Update column names to this plot's statistics
 columns = {

@@ -27,10 +27,6 @@ end
 % Query dose differences, by machine
 data = db.queryColumns('delta4', 'dosedev', 'delta4', 'machine', ...
     'where', 'delta4', 'measdate', range);
-machines = unique(data(:,2));
-
-% Define bin edges
-e = -5:0.5:5;
 
 % If no data was found
 if isempty(data)
@@ -38,6 +34,12 @@ if isempty(data)
     warndlg(nodatamsg);
     return;
 end
+
+% Define bin edges
+e = -5:0.5:5;
+
+% Extract unique list of machines
+machines = unique(data(:,2));
 
 % Update column names to this plot's statistics
 columns = {

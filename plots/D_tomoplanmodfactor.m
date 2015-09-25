@@ -43,6 +43,8 @@ ylabel('Occurrence');
 box on;
 grid on;
 
+PlotBackground('vertical', [1.5 1.8 3 4]);
+
 columns = {
     'Dataset'
     'Show'

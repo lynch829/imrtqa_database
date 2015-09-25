@@ -33,8 +33,9 @@ end
 % Set column names
 columns = {'Machine', 'Show', 'N', '%'};
 
-% Determine unique machines
+% Extract unique list of machines
 machines = unique(data(:,1));
+
 c = zeros(size(machines));
 rows = cell(length(machines), 4);
 for i = 1:length(machines)

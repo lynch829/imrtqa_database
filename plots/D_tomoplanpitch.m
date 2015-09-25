@@ -44,6 +44,8 @@ box on;
 grid on;
 xlim([0.1 0.45]);
 
+PlotBackground('vertical', [0.1 0.1 0.5 0.5]);
+
 columns = {
     'Dataset'
     'Show'
