@@ -77,7 +77,7 @@ else
             break;
         end
     end
-end
+end 
 
 % Clear temporary variables
 clear i type range stats nodatamsg;

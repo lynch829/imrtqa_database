@@ -20,11 +20,8 @@ else
 end
 
 % Query TomoTherapy gantry mode and date
-data = db.queryColumns('tomo', 'planmod', 'tomo', 'plandate');
-
-% Remove dates outside of range range
-data = data(cell2mat(data(:,2)) > range(1), 1:2);
-data = data(cell2mat(data(:,2)) < range(2), 1:2);
+data = db.queryColumns('tomo', 'planmod', ...
+    'where', 'tomo', 'plandate', range);
 
 % If no data was found
 if isempty(data)

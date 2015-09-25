@@ -26,12 +26,7 @@ end
 
 % Query gamma pass rate, by machine
 data = db.queryColumns('delta4', 'gammapassrate', 'delta4', 'measdate', ...
-    'delta4', 'machine');
-machines = unique(data(:,3));
-
-% Remove dates outside of range range
-data = data(cell2mat(data(:,2)) > range(1), 1:3);
-data = data(cell2mat(data(:,2)) < range(2), 1:3);
+    'delta4', 'machine', 'where', 'delta4', 'measdate', range);
 
 % If no data was found
 if isempty(data)
@@ -39,6 +34,9 @@ if isempty(data)
     warndlg(nodatamsg);
     return;
 end
+
+% Extract unique list of machines
+machines = unique(data(:,3));
 
 % Update column names to this plot's statistics
 columns = {

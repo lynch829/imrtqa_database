@@ -20,11 +20,8 @@ else
 end
 
 % Query measured dates for Delta4 records
-data = cell2mat(db.queryColumns('delta4', 'measdate'));
-
-% Remove dates outside of range range
-data = data(data > range(1));
-data = data(data < range(2));
+data = cell2mat(db.queryColumns('delta4', 'measdate', 'where', 'delta4', ...
+    'measdate', range));
 
 % If no data was found
 if isempty(data)

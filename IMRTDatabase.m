@@ -141,30 +141,75 @@ methods
     % report table that contains uid reference columns to the other tables.
    
         % Loop through the arguments, prepending the table name to the col
+        sql = 'SELECT ';
         for i = 1:2:nargin-1
-            varargin{i+1} = [varargin{i}, '.', varargin{i+1}];
+            if strcmpi(varargin{i}, 'where')
+                varargin{i+2} = [varargin{i+1}, '.', varargin{i+2}];
+                break;
+            else
+                varargin{i+1} = [varargin{i}, '.', varargin{i+1}];
+                sql = [sql, varargin{i+1}, ', '];
+            end
         end
         
         % Initialize SQL query string
-        sql = ['SELECT ', strjoin(varargin(2:2:end), ', '), ' FROM ', ...
-            varargin{1}];
+        sql = [sql(1:end-2), ' FROM ', varargin{1}];
         
+        % Initialize join flag
+        where = false;
+
         % Add join statements if second db doesn't match first one
         for i = 3:2:nargin-1
-            if ~strcmp(varargin{1}, varargin{i})
+            if strcmpi(varargin{i}, 'where')
+                if where
+                    sql = [sql, ' AND ', varargin{i+2}];
+                else
+                    sql = [sql, ' WHERE ', varargin{i+2}];
+                    where = true;
+                end
+
+                if length(varargin{i+3}) == 1
+                    sql = [sql, ' = ''', strrep(varargin{i+3}, '''', ''), ...
+                        ''''];
+                elseif length(varargin{i+3}) == 2
+                    sql = [sql, ' > ', sprintf('%0.32f', varargin{i+3}(1)), ...
+                        ' AND ', varargin{i+2}, ' < ', ...
+                        sprintf('%0.32f', varargin{i+3}(2))];
+                else
+                    if exist('Event', 'file') == 2
+                        Event('Invalid format for WHERE clause', 'ERROR');
+                    else
+                        error('Invalid format for WHERE clause');
+                    end
+                end
+                break;
+            elseif ~strcmp(varargin{1}, varargin{i})
+                where = true;
                 sql = [sql, ' LEFT JOIN ', varargin{i}, ' ON ', varargin{i}, ...
                     '.uid = ', varargin{1}, '.', varargin{i}, 'uid']; %#ok<*AGROW>
             end
         end
         
         % Add where statements
-        sql = [sql, ' WHERE ', varargin{2}, ' IS NOT NULL'];
+        if where
+            sql = [sql, ' AND ', varargin{2}, ' IS NOT NULL'];
+        else
+            sql = [sql, ' WHERE ', varargin{2}, ' IS NOT NULL'];
+        end
         for i = 3:2:nargin-1
-            sql = [sql, ' AND ', varargin{i+1}, ' IS NOT NULL'];
+            if strcmpi(varargin{i}, 'where')
+                break;
+            else
+                sql = [sql, ' AND ', varargin{i+1}, ' IS NOT NULL'];
+            end
         end
         cursor = exec(obj.connection, sql);
         cursor = fetch(cursor);
-        data = cursor.Data;
+        if strcmp(cursor.Data, 'No Data')
+            data = [];
+        else
+            data = cursor.Data;
+        end
         clear sql cursor;
     end
     

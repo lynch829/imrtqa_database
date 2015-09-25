@@ -20,11 +20,8 @@ else
 end
 
 % Query phantom temperature
-data = db.queryColumns('delta4', 'abspassrate', 'delta4', 'measdate');
-
-% Remove dates outside of range range
-data = data(cell2mat(data(:,2)) > range(1), 1:2);
-data = data(cell2mat(data(:,2)) < range(2), 1:2);
+data = db.queryColumns('delta4', 'abspassrate', ...
+    'where', 'delta4', 'measdate', range);
 
 % If no data was found
 if isempty(data)

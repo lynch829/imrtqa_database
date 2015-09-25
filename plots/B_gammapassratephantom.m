@@ -26,16 +26,7 @@ end
 
 % Query gamma pass rate, by phantom
 data = db.queryColumns('delta4', 'gammapassrate', 'delta4', 'phantom', ...
-    'delta4', 'measdate');
-phantoms = unique(data(:,2));
-phantoms = phantoms(~strcmp(phantoms, 'Unknown'));
-
-% Define bin edges
-e = 90:0.5:100;
-
-% Remove dates outside of range range
-data = data(cell2mat(data(:,3)) > range(1), 1:3);
-data = data(cell2mat(data(:,3)) < range(2), 1:3);
+    'where', 'delta4', 'measdate', range);
 
 % If no data was found
 if isempty(data)
@@ -43,6 +34,13 @@ if isempty(data)
     warndlg(nodatamsg);
     return;
 end
+
+% Extract unique list of phantoms
+phantoms = unique(data(:,2));
+phantoms = phantoms(~strcmp(phantoms, 'Unknown'));
+
+% Define bin edges
+e = 90:0.5:100;
 
 % Update column names to this plot's statistics
 columns = {

@@ -26,15 +26,11 @@ end
 
 % Query dose differences, by machine
 data = db.queryColumns('delta4', 'dosedev', 'delta4', 'machine', ...
-    'delta4', 'measdate');
+    'where', 'delta4', 'measdate', range);
 machines = unique(data(:,2));
 
 % Define bin edges
 e = -5:0.5:5;
-
-% Remove dates outside of range range
-data = data(cell2mat(data(:,3)) > range(1), 1:3);
-data = data(cell2mat(data(:,3)) < range(2), 1:3);
 
 % If no data was found
 if isempty(data)

@@ -1,8 +1,8 @@
-function varargout = B_dosedvsdatemachine(varargin)
+function varargout = B_dosevsdatephantom(varargin)
 
 % If no inputs are provided, return plot name
 if nargin == 0
-    varargout{1} = 'Dose vs. Date (Machine)';
+    varargout{1} = 'Dose vs. Date (Phantom)';
     return;
 else
     stats = [];
@@ -26,12 +26,7 @@ end
 
 % Query dose differences, by machine
 data = db.queryColumns('delta4', 'dosedev', 'delta4', 'measdate', ...
-    'delta4', 'machine');
-machines = unique(data(:,3));
-
-% Remove dates outside of range range
-data = data(cell2mat(data(:,2)) > range(1), 1:3);
-data = data(cell2mat(data(:,2)) < range(2), 1:3);
+    'delta4', 'phantom', 'where', 'delta4', 'measdate', range);
 
 % If no data was found
 if isempty(data)
@@ -39,6 +34,10 @@ if isempty(data)
     warndlg(nodatamsg);
     return;
 end
+
+% Extract unique list of phantoms
+phantoms = unique(data(:,3));
+phantoms = phantoms(~strcmp(phantoms, 'Unknown'));
 
 % Update column names to this plot's statistics
 columns = {
@@ -50,12 +49,12 @@ columns = {
     'P-Value'
 };
 
-% Loop through machines, plotting dose differences over time
+% Loop through phantoms, plotting dose differences over time
 hold on;
-for i = 1:length(machines)
+for i = 1:length(phantoms)
 
-    d = cell2mat(data(strcmp(data(:,3), machines{i}), 1:2));
-    rows{i,1} = machines{i};
+    d = cell2mat(data(strcmp(data(:,3), phantoms{i}), 1:2));
+    rows{i,1} = phantoms{i};
     rows{i,3} = sprintf('%i', size(d,1));
 
     if size(d,1) > 1
@@ -70,20 +69,20 @@ for i = 1:length(machines)
     end
 
     % If a filter exists, and data is displayed
-    if (isempty(rows{i,2}) || ~strcmp(rows{i,1}, machines{i}) || ...
+    if (isempty(rows{i,2}) || ~strcmp(rows{i,1}, phantoms{i}) || ...
             rows{i,2}) && ~isempty(d)
 
         plot(d(:,2), d(:,1), '.', 'MarkerSize', 30);
         rows{i,2} = true;
     else   
-        machines{i} = '';
+        phantoms{i} = '';
         rows{i,2} = false;
     end
 
 end
 
 hold off;
-legend(machines(~strcmp(machines, '')));
+legend(phantoms(~strcmp(phantoms, '')));
 ylabel('Absolute Dose Difference (%)');
 xlabel('');
 datetick('x','mm/dd/yyyy');
@@ -95,9 +94,9 @@ PlotBackground('horizontal', [-3 -2 2 3]);
 
 % Update stats
 if ~isempty(stats)
-    set(stats, 'Data', rows(1:length(machines), 1:length(columns)));
+    set(stats, 'Data', rows(1:length(phantoms), 1:length(columns)));
     set(stats, 'ColumnName', columns);
 end
 
 % Clear temporary variables
-clear data e d machines i m p;
+clear data e d phantoms i m p;
