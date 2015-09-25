@@ -31,7 +31,7 @@ if isempty(data)
 end
 
 % Define bin edges
-e = 0:30:max(data(:,1));
+e = 0:60:2500;
 
 % Plot histogram of times
 d = histcounts(data(:,1), e);
@@ -42,6 +42,7 @@ xlabel('Fraction Treatment Time (sec)');
 ylabel('Occurrence');
 box on;
 grid on;
+xlim([0 2500]);
 
 PlotBackground('vertical', [0 0 900 1800]);
 
