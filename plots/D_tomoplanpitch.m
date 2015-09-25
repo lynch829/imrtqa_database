@@ -19,7 +19,7 @@ else
     end
 end
 
-% Query TomoTherapy gantry mode and date
+% Query TomoTherapy pitch and date
 data = db.queryColumns('tomo', 'pitch', ...
     'where', 'tomo', 'plandate', range);
 
