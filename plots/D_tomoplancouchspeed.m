@@ -31,19 +31,19 @@ if isempty(data)
 end
 
 % Define bin edges
-e = 0:0.1:4;
+e = 0:0.01:0.5;
 
 % Plot histogram of speeds
 d = histcounts(data(:,1), e);
-plot((e(1):0.01:e(end)), interp1(e(1:end-1), d, ...
-    (e(1):0.01:e(end))-(e(2)-e(1))/2, 'nearest', 'extrap'), ...
+plot((e(1):0.001:e(end)), interp1(e(1:end-1), d, ...
+    (e(1):0.001:e(end))-(e(2)-e(1))/2, 'nearest', 'extrap'), ...
     'LineWidth', 2);
 xlabel('Couch Speed (cm/sec)');
 ylabel('Occurrence');
 box on;
 grid on;
 
-PlotBackground('vertical', [0 0 4 4]);
+PlotBackground('vertical', [0 0 0.5 0.5]);
 
 columns = {
     'Dataset'

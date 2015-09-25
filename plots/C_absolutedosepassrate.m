@@ -31,7 +31,7 @@ if isempty(data)
 end
 
 % Plot histogram of dates
-[d, e] = histcounts(cell2mat(data(:,1)));
+[d, e] = histcounts(cell2mat(data(:,1)), 20);
 plot((e(1):0.01:e(end)), interp1(e(1:end-1), d, ...
     (e(1):0.01:e(end))-(e(2)-e(1))/2, 'nearest', 'extrap'), ...
     'LineWidth', 2);
@@ -39,6 +39,7 @@ xlabel('Absolute Dose Criterion Pass Rate (%)');
 ylabel('Occurrence');
 box on;
 grid on;
+xlim([min(cell2mat(data(:,1))) 100]);
 
 % Add colored background
 PlotBackground('vertical', [0 0 100 100]);

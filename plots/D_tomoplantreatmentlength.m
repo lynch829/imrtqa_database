@@ -31,14 +31,14 @@ if isempty(data)
 end
 
 % Define bin edges
-e = 0:10:160;
+e = 0:5:160;
 
 % Plot histogram of lengths
-d = histcounts(data(:,1), e);
+d = histcounts(abs(data(:,1)), e);
 plot((e(1):0.1:e(end)), interp1(e(1:end-1), d, ...
     (e(1):0.1:e(end))-(e(2)-e(1))/2, 'nearest', 'extrap'), ...
     'LineWidth', 2);
-xlabel('Treatment Couch Length (cm)');
+xlabel('Treatment Length (cm)');
 ylabel('Occurrence');
 box on;
 grid on;

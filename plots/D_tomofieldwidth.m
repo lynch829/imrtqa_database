@@ -35,9 +35,9 @@ columns = {'Field Width', 'Show', 'N', '%'};
 
 % Determine unique modes
 for i = 1:size(data,1)
-    if round(data{i,1}) == 4
+    if round(data{i,1}) == 5
         data{i,1} = '5 cm';
-    elseif round(data{i,1}) == 2
+    elseif round(data{i,1}) == 3
         data{i,1} = '2.5 cm';
     elseif round(data{i,1}) == 1
         data{i,1} = '1 cm';

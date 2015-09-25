@@ -31,7 +31,7 @@ if isempty(data)
 end
 
 % Define bin edges
-e = min(data(:,1)):30:max(data(:,1));
+e = 0:30:max(data(:,1));
 
 % Plot histogram of times
 d = histcounts(data(:,1), e);

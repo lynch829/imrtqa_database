@@ -30,7 +30,7 @@ if isempty(data)
 end
 
 % Define bin edges
-e = 10:5:60;
+e = 10:2:60;
 
 % Plot histogram of dates
 d = histcounts(cell2mat(data(:,1)), e);
@@ -43,7 +43,7 @@ box on;
 grid on;
 xlim([10 60]);
 
-PlotBackground('vertical', [12 20 60 60]);
+PlotBackground('vertical', [15 20 60 60]);
 
 columns = {
     'Dataset'
