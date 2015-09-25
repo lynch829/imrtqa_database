@@ -34,7 +34,7 @@ if isempty(data)
 end
 
 % Set column names
-columns = {'Machine', 'Show', 'N', '%'};
+columns = {'Gantry Type', 'Show', 'N', '%'};
 
 % Determine unique modes
 modes = unique(data(:,1));
