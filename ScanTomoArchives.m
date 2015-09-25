@@ -163,6 +163,9 @@ while i < size(list, 1)
                     try
                         plan = LoadPlan(fullpath, patient, planUIDs{j}, ...
                             'noerrormsg');
+                        
+                        % Adjust scale to per fraction
+                        plan.scale = plan.scale / plan.fractions;
                     catch
                         Event(['LoadPlan encountered an error, ', ...
                             'continuing to next plan'], 'CATCH');
