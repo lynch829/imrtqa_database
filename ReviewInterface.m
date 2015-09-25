@@ -61,7 +61,7 @@ warning('off','all');
 set(0, 'DefaulttextInterpreter', 'none');
 
 % Set version handle
-handles.version = '0.1';
+handles.version = '0.9';
 set(handles.version_text, 'String', ['Version ', handles.version]);
 
 % Set database file location
