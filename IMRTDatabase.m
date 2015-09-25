@@ -687,7 +687,7 @@ methods
                     && isfield(record, 'scale')  
                 for i = 1:size(record.events, 1)
                     if strcmp(record.events{i,2}, 'isoZRate')
-                        data{13,2} = record.events{i,3} / record.scale * ...
+                        data{13,2} = abs(record.events{i,3}) / record.scale * ...
                             (record.totalTau * record.scale + 10);
                         break
                     end
