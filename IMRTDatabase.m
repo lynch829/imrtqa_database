@@ -669,29 +669,26 @@ methods
                 data{10,2} = abs(record.frontField) + abs(record.backField);
             end
             data{11,1} = 'period';
-            if isfield(record, 'planType') && isfield(record, 'events') ...
+            if isfield(record, 'scale') && isfield(record, 'planType') ...
                         && strcmp(record.planType, 'Helical')
-                for i = 1:size(record.events, 1)
-                    if strcmp(record.events{i,2}, 'gantryRate')
-                        data{11,2} = record.events{i,3} * 51;
-                        break
-                    end
-                end
+                data{11,2} = record.scale * 51;
             end
             data{12,1} = 'couchspeed';
             if isfield(record, 'events') && isfield(record, 'scale') 
                 for i = 1:size(record.events, 1)
                     if strcmp(record.events{i,2}, 'isoZRate')
-                        data{12,2} = record.events{i,3} * record.scale;
+                        data{12,2} = abs(record.events{i,3}) / record.scale;
                         break
                     end
                 end
             end
             data{13,1} = 'couchlength';
-            if isfield(record, 'events') && isfield(record, 'totalTau') 
+            if isfield(record, 'events') && isfield(record, 'totalTau') ...
+                    && isfield(record, 'scale')  
                 for i = 1:size(record.events, 1)
                     if strcmp(record.events{i,2}, 'isoZRate')
-                        data{13,2} = record.events{i,3} * record.totalTau;
+                        data{13,2} = record.events{i,3} / record.scale * ...
+                            (record.totalTau * record.scale + 10);
                         break
                     end
                 end
@@ -707,12 +704,32 @@ methods
                 data{15,2} = max(lots)/mean(lots);
                 clear lots;
             end
-            data{16,1} = 'sinogram';
-            if isfield(record, 'sinogram')
-                data{16,2} = sprintf('%0.32e\t', record.sinogram);
+            data{16,1} = 'rxdose';
+            if isfield(record, 'rxDose')
+                data{16,2} = record.rxDose;
             end
-            data{17,1} = 'rtplan';
-            data{17,2} = savejson('rtplan', record);
+            data{17,1} = 'fractions';
+            if isfield(record, 'fractions')
+                data{17,2} = record.fractions;
+            end
+            data{18,1} = 'txtime';
+            if isfield(record, 'scale') && isfield(record, 'totalTau')
+                data{18,2} = record.scale * record.totalTau + 10;
+            end
+            data{19,1} = 'projtime';
+            if isfield(record, 'scale')
+                data{19,2} = record.scale;
+            end
+            data{20,1} = 'numprojections';
+            if isfield(record, 'totalTau')
+                data{20,2} = record.totalTau;
+            end
+            data{21,1} = 'sinogram';
+            if isfield(record, 'sinogram')
+                data{21,2} = sprintf('%0.32e\t', record.sinogram);
+            end
+            data{22,1} = 'rtplan';
+            data{22,2} = savejson('rtplan', record);
             
             % Insert row into database
             datainsert(obj.connection, 'tomo', data(:,1)', data(:,2)');
@@ -778,8 +795,16 @@ methods
                 end
                 data{10,2} = cps;
             end
-            data{11,1} = 'rtplan';
-            data{11,2} = savejson('rtplan', record);
+            data{11,1} = 'rxdose';
+            if isfield(record, 'rxDose')
+                data{11,2} = record.rxDose;
+            end
+            data{12,1} = 'fractions';
+            if isfield(record, 'fractions')
+                data{12,2} = record.fractions;
+            end
+            data{13,1} = 'rtplan';
+            data{13,2} = savejson('rtplan', record);
             
             % Insert row into database
             datainsert(obj.connection, 'linac', data(:,1)', data(:,2)');
