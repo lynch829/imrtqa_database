@@ -50,12 +50,16 @@ columns = {
     'Dataset'
     'Show'
     'Mean'
+    'Min'
+    'Max'
 };
 
-rows = cell(1,3);
+rows = cell(1,5);
 rows{1,1} = 'Tx Time';
 rows{1,2} = true;
-rows{1,3} = sprintf('%0.3f', mean(data(:,1)));
+rows{1,3} = sprintf('%0.1f', mean(data(:,1)));
+rows{1,4} = sprintf('%0.1f', min(data(:,1)));
+rows{1,5} = sprintf('%0.1f', max(data(:,1)));
 
 % Update stats
 if ~isempty(stats)

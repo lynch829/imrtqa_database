@@ -31,7 +31,7 @@ if isempty(data)
 end
 
 % Define bin edges
-e = 0:100:max(data(:,1));
+e = 0:250:8000;
 
 % Plot histogram of dates
 d = histcounts(data(:,1), e);
@@ -42,20 +42,24 @@ xlabel('Number of Projections');
 ylabel('Occurrence');
 box on;
 grid on;
-xlim([0 max(data(:,1))]);
+xlim([0 8000]);
 
-PlotBackground('vertical', [0 0 100000 100000]);
+PlotBackground('vertical', [0 0 10000 10000]);
 
 columns = {
     'Dataset'
     'Show'
     'Mean'
+    'Min'
+    'Max'
 };
 
-rows = cell(1,3);
+rows = cell(1,5);
 rows{1,1} = 'Projections';
 rows{1,2} = true;
-rows{1,3} = sprintf('%0.3f', mean(data(:,1)));
+rows{1,3} = sprintf('%0.1f', mean(data(:,1)));
+rows{1,4} = sprintf('%0.1f', min(data(:,1)));
+rows{1,5} = sprintf('%0.1f', max(data(:,1)));
 
 % Update stats
 if ~isempty(stats)

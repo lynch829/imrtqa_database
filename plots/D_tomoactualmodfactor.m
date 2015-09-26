@@ -1,8 +1,8 @@
-function varargout = D_tomoplanmodfactor(varargin)
+function varargout = D_tomoactualmodfactor(varargin)
 
 % If no inputs are provided, return plot name
 if nargin == 0
-    varargout{1} = 'TomoTherapy Plan Mod Factor';
+    varargout{1} = 'TomoTherapy Actual Mod Factor';
     return;
 else
     stats = [];
@@ -19,8 +19,8 @@ else
     end
 end
 
-% Query TomoTherapy gantry mode and date
-data = db.queryColumns('tomo', 'planmod', ...
+% Query TomoTherapy actual MF and date
+data = db.queryColumns('tomo', 'actualmod', ...
     'where', 'tomo', 'plandate', range);
 
 % If no data was found
@@ -38,12 +38,12 @@ d = histcounts(cell2mat(data(:,1)), e);
 plot((e(1):0.001:e(end)), interp1(e(1:end-1), d, ...
     (e(1):0.001:e(end))-(e(2)-e(1))/2, 'nearest', 'extrap'), ...
     'LineWidth', 2);
-xlabel('Plan Modulation Factor');
+xlabel('Actual Modulation Factor');
 ylabel('Occurrence');
 box on;
 grid on;
 
-PlotBackground('vertical', [1.5 1.8 3 5]);
+PlotBackground('vertical', [1.5 1.8 3 4]);
 
 columns = {
     'Dataset'
