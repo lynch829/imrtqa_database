@@ -697,39 +697,46 @@ methods
             if isfield(record, 'modFactor')
                 data{14,2} = record.modFactor;
             end
-            data{15,1} = 'actualmod';
+            data{15,1} = 'optimod';
             if isfield(record, 'sinogram')
                 lots = reshape(record.sinogram, 1, []);
                 lots(lots == 0) = [];
                 data{15,2} = max(lots)/mean(lots);
                 clear lots;
             end
-            data{16,1} = 'rxdose';
+            data{16,1} = 'actualmod';
+            if isfield(record, 'sinogram') && isfield(record, 'scale')
+                lots = reshape(record.sinogram, 1, []) * record.scale;
+                lots(lots < 0.018) = []; % 18 msec
+                data{16,2} = max(lots) / mean(lots);
+                clear lots;
+            end
+            data{17,1} = 'rxdose';
             if isfield(record, 'rxDose')
-                data{16,2} = record.rxDose;
+                data{17,2} = record.rxDose;
             end
-            data{17,1} = 'fractions';
+            data{18,1} = 'fractions';
             if isfield(record, 'fractions')
-                data{17,2} = record.fractions;
+                data{18,2} = record.fractions;
             end
-            data{18,1} = 'txtime';
+            data{19,1} = 'txtime';
             if isfield(record, 'scale') && isfield(record, 'totalTau')
-                data{18,2} = record.scale * record.totalTau + 10;
+                data{19,2} = record.scale * record.totalTau + 10;
             end
-            data{19,1} = 'projtime';
+            data{20,1} = 'projtime';
             if isfield(record, 'scale')
-                data{19,2} = record.scale;
+                data{20,2} = record.scale;
             end
-            data{20,1} = 'numprojections';
+            data{21,1} = 'numprojections';
             if isfield(record, 'totalTau')
-                data{20,2} = record.totalTau;
+                data{21,2} = record.totalTau;
             end
-            data{21,1} = 'sinogram';
+            data{22,1} = 'sinogram';
             if isfield(record, 'sinogram')
-                data{21,2} = sprintf('%0.32e\t', record.sinogram);
+                data{22,2} = sprintf('%0.32e\t', record.sinogram);
             end
-            data{22,1} = 'rtplan';
-            data{22,2} = savejson('rtplan', record);
+            data{23,1} = 'rtplan';
+            data{23,2} = savejson('rtplan', record);
             
             % Insert row into database
             datainsert(obj.connection, 'tomo', data(:,1)', data(:,2)');
@@ -926,6 +933,69 @@ methods
         
         % Clear temporary variables
         clear fid sql cursor cols;
+    end
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    function dbUpgradeOptimod(obj)
+    % Upgrades the IMRT QA database to support optimization modulation
+    % factors
+       
+        % Query tomo table formt
+        sql = 'PRAGMA table_info(tomo)';
+        cursor = exec(obj.connection, sql);
+        cursor = fetch(cursor);  
+        cols = cursor.Data;
+        
+        % If optimod column does exists, this database was already upgraded
+        if ~ismember('optimod', cols(:,2))
+            error('The database has already been upgraded for optimod');
+        else
+            
+            % Add optimod column
+            sql = 'ALTER TABLE tomo ADD COLUMN optimod float';
+            exec(obj.connection, sql);
+            
+            % Loop through each record
+            sql = 'SELECT uid FROM tomo';
+            cursor = exec(obj.connection, sql);
+            cursor = fetch(cursor);  
+            rows = cursor.Data;
+            
+            % Loop through rows
+            for i = 1:length(rows)
+                
+                % Query actualmod, projtime, and sinogram
+                sql = ['SELECT actualmod, projtime, sinogram FROM tomo ', ...
+                    'WHERE uid = ''', rows{i}, ''''];
+                cursor = exec(obj.connection, sql);
+                cursor = fetch(cursor);  
+                row = cursor.Data;
+                
+                % If present, compute new actual mod factors
+                if ~isempty(row{2}) && ~isempty(row{3})
+                   
+                    s = textscan(row{3}, '%f');
+                    
+                    lots = s{1};
+                    lots(lots == 0) = [];
+                    optimod = max(lots) / mean(lots);
+                    
+                    lots = s{1} * row{2};
+                    lots(lots < 0.018) = [];
+                    actualmod = max(lots) / mean(lots);
+                
+                    % Update record
+                    sql = ['UPDATE tomo SET optimod = ', ...
+                        sprintf('%0.4f', optimod), ', actualmod = ', ...
+                        sprintf('%0.4f', actualmod)...
+                        ' WHERE uid = ''', rows{i}, ''''];
+                    exec(obj.connection, sql);
+                end
+            end
+        end
+        
+        % Clear temporary variables
+        clear rows row cols i optimod actualmod lots s;
     end
 end
 end

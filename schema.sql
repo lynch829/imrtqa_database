@@ -52,6 +52,7 @@ txtime float,
 couchspeed float,
 couchlength float,
 planmod float,
+optimod float,
 actualmod float,
 sinogram blob,
 rtplan blob);
