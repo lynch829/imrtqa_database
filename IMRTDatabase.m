@@ -1022,7 +1022,7 @@ methods
         cols = cursor.Data;
         
         % If optimod column does exists, this database was already upgraded
-        if ~ismember('doseperfx', cols(:,2))
+        if ismember('doseperfx', cols(:,2))
             error('The database has already been upgraded for optimod');
         else
             
