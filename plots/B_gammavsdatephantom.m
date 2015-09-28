@@ -71,7 +71,7 @@ hold off;
 legend(phantoms(~strcmp(phantoms, '')));
 ylabel('Gamma Index Pass Rate (%)');
 xlabel('');
-datetick('x','mm/dd/yyyy');
+datetick('x','mm/dd/yyyy', 'keeplimits');
 box on;
 grid on;
 

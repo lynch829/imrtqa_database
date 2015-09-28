@@ -19,9 +19,9 @@ else
     end
 end
 
-% Query phantom temperature
-data = db.queryColumns('delta4', 'temperature', ...
-    'where', 'delta4', 'measdate', range);
+% Query phantom temperature, dose diff, and pass rate
+data = cell2mat(db.queryColumns('delta4', 'temperature', 'delta4', 'dosedev', ...
+    'delta4', 'gammapassrate', 'where', 'delta4', 'measdate', range));
 
 % If no data was found
 if isempty(data)
@@ -31,7 +31,8 @@ if isempty(data)
 end
 
 % Plot histogram of dates
-[d, e] = histcounts(cell2mat(data(:,1)));
+subplot(2,2,1);
+[d, e] = histcounts(data(:,1));
 plot((e(1):0.01:e(end)), interp1(e(1:end-1), d, ...
     (e(1):0.01:e(end))-(e(2)-e(1))/2, 'nearest', 'extrap'), ...
     'LineWidth', 2);
@@ -39,15 +40,101 @@ xlabel('Phantom Temperature (C)');
 ylabel('Occurrence');
 box on;
 grid on;
+PlotBackground('vertical', [21 22 25 26]);
 
-% Add colored background
+% Plot dose diff as a function of temperature
+subplot(2,2,2);
+plot(data(:,1), data(:,2), '.', 'MarkerSize', 30);
+xlabel('Phantom Temperature (C)');
+ylabel('Dose Difference (%)');
+box on;
+grid on;
+PlotBackground('vertical', [21 22 25 26]);
+
+% Plot gamma pass rate as a function of temperature
+subplot(2,2,3);
+plot(data(:,1), data(:,3), '.', 'MarkerSize', 30);
+xlabel('Phantom Temperature (C)');
+ylabel('Gamma Pass Rate (%)');
+box on;
+grid on;
+PlotBackground('vertical', [21 22 25 26]);
+
+% Define columns
+columns = {
+    'Response'
+    'Show'
+    'N'
+    'R^2'
+    'Slope'
+    'SE'
+    'T-Stat'
+    'P-Value'
+    '95% CI'
+};
+
+% Create new rows array
+rows = cell(size(data,2)-1, 9);
+rows(:,1) = {
+    'Dose Diff'
+    'Gamma Pass Rate'
+};
+
+% If a valid filter was provided, store its current contents
+if ~isempty(stats)
+    prev = get(stats, 'Data');
+end
+
+% Loop through variables
+subplot(2,2,4);
+hold on;
+l = cell(0);
+for i = 1:size(data,2)-1
+    
+    if size(prev,1) >= i && strcmp(prev{i,1}, rows{i,1}) && ~prev{i,2}
+        rows{i,2} = false;
+    else
+        rows{i,2} = true;
+    end
+    
+    % Fit linear model to data
+    try
+        m = fitlm(data(:,1), data(:,i+1), 'linear', 'RobustOpts', 'bisquare');
+        ci = coefCI(m, 0.05);
+    catch err
+        Event(err.message, 'WARN');
+        warndlg(err.message);
+        return;
+    end
+    
+    rows{i,3} = sprintf('%i', m.NumObservations);
+    rows{i,4} = sprintf('%0.3f', m.Rsquared.Ordinary);
+    rows{i,5} = sprintf('%0.3f%%/C', m.Coefficients{2,1});
+    rows{i,6} = sprintf('%0.3f', m.Coefficients{2,2});
+    rows{i,7} = sprintf('%0.3f', m.Coefficients{2,3});
+    rows{i,8} = sprintf('%0.3f', m.Coefficients{2,4});
+    rows{i,9} = sprintf('[%0.3f%%, %0.3f%%]', ci(2,:));
+    
+    if rows{i,2}
+        l{length(l)+1} = rows{i,1};
+        plot(data(:,1), m.Residuals.Standardized, '.', 'MarkerSize', 30);
+    end
+end
+hold off;
+if length(l) > 1
+    legend(l);
+end
+ylabel('Standardized Residual');
+xlabel('Phantom Temperature');
+box on;
+grid on;
 PlotBackground('vertical', [21 22 25 26]);
 
 % Update stats
 if ~isempty(stats)
-    set(stats, 'Data', {});
-    set(stats, 'ColumnName', {});
+    set(stats, 'Data', rows);
+    set(stats, 'ColumnName', columns);
 end
 
 % Clear temporary variables
-clear data d e;
+clear data d e m oldrows i;
