@@ -1,4 +1,4 @@
-function varargout = D_tomofieldwidth(varargin)
+function varargout = D_tomoplanfieldwidth(varargin)
 
 % If no inputs are provided, return plot name
 if nargin == 0
