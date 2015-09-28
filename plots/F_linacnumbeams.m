@@ -25,7 +25,7 @@ data = cell2mat(db.queryColumns('linac', 'numbeams', 'where', 'linac', ...
 
 % If no data was found
 if isempty(data)
-    Event(nodatamsg);
+    Event(nodatamsg, 'WARN');
     warndlg(nodatamsg);
     return;
 end

@@ -30,7 +30,7 @@ data = db.queryColumns('delta4', 'dosedev', 'delta4', 'machine', ...
 
 % If no data was found
 if isempty(data)
-    Event(nodatamsg);
+    Event(nodatamsg, 'WARN');
     warndlg(nodatamsg);
     return;
 end

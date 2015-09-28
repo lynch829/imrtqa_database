@@ -2,7 +2,7 @@ function varargout = D_tomooptimodfactor(varargin)
 
 % If no inputs are provided, return plot name
 if nargin == 0
-    varargout{1} = 'TomoTherapy Optimization Mod Factor';
+    varargout{1} = 'Tomo Optimization Mod Factor';
     return;
 else
     stats = [];
@@ -25,7 +25,7 @@ data = db.queryColumns('tomo', 'optimod', ...
 
 % If no data was found
 if isempty(data)
-    Event(nodatamsg);
+    Event(nodatamsg, 'WARN');
     warndlg(nodatamsg);
     return;
 end

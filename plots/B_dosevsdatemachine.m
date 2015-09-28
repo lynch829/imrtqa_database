@@ -30,7 +30,7 @@ data = db.queryColumns('delta4', 'dosedev', 'delta4', 'measdate', ...
 
 % If no data was found
 if isempty(data)
-    Event(nodatamsg);
+    Event(nodatamsg, 'WARN');
     warndlg(nodatamsg);
     return;
 end
@@ -43,7 +43,7 @@ columns = {
     'Dataset'
     'Show'
     'N'
-    'Adj R^2'
+    'R^2'
     'Slope'
     'P-Value'
 };
@@ -57,8 +57,14 @@ for i = 1:length(machines)
     rows{i,3} = sprintf('%i', size(d,1));
 
     if size(d,1) > 1
-        m = fitlm(d(:,2), d(:,1));
-        rows{i,4} = sprintf('%0.3f', m.Rsquared.Adjusted);
+        try
+            m = fitlm(d(:,2), d(:,1), 'linear', 'RobustOpts', 'bisquare');
+        catch err
+            Event(err.message, 'WARN');
+            warndlg(err.message);
+            return;
+        end
+        rows{i,4} = sprintf('%0.3f', m.Rsquared.Ordinary);
         rows{i,5} = sprintf('%0.3f%%/day', m.Coefficients{2,1});
         rows{i,6} = sprintf('%0.3f', m.Coefficients{2,4});
     else

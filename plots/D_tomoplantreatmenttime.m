@@ -2,7 +2,7 @@ function varargout = D_tomoplantreatmenttime(varargin)
 
 % If no inputs are provided, return plot name
 if nargin == 0
-    varargout{1} = 'TomoTherapy Plan Treatment Time';
+    varargout{1} = 'Tomo Plan Treatment Time';
     return;
 else
     stats = [];
@@ -25,7 +25,7 @@ data = cell2mat(db.queryColumns('tomo', 'txtime', 'where', 'tomo', ...
 
 % If no data was found
 if isempty(data)
-    Event(nodatamsg);
+    Event(nodatamsg, 'WARN');
     warndlg(nodatamsg);
     return;
 end
