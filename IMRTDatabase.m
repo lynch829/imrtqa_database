@@ -18,6 +18,9 @@ methods
         % Add SQLite JDBC driver (current database is 3.8.5)
         javaaddpath('./sqlite-jdbc-3.8.5-pre1.jar');
     
+        % Add jsonlab submodule to search path
+        addpath('./jsonlab');
+        
         % Verify database file exists
         if exist(db, 'file') == 2
         
@@ -26,7 +29,7 @@ methods
                 ['jdbc:sqlite:',db]);
 
             % Set the data return format to support strings
-            setdbprefs('DataReturnFormat', 'cellarray')
+            setdbprefs('DataReturnFormat', 'cellarray');
         else
             if exist('Event', 'file') == 2
                 Event(['The SQLite3 database file is missing', db], ...
@@ -947,7 +950,7 @@ methods
         cols = cursor.Data;
         
         % If optimod column does exists, this database was already upgraded
-        if ~ismember('optimod', cols(:,2))
+        if ismember('optimod', cols(:,2))
             error('The database has already been upgraded for optimod');
         else
             
