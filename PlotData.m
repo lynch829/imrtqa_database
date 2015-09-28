@@ -1,7 +1,7 @@
 function varargout = PlotData(varargin)
 % Queries the IMRT QA database and plots results based on provided type
 
-persistent plotList ax db;
+persistent plotList db parent;
 
 % Define text for warning message if no data is found
 nodatamsg = ['Based on the provided date range, no data was found for ', ...
@@ -29,8 +29,8 @@ else
     stats = [];
     
     for i = 1:nargin
-        if strcmpi(varargin{i}, 'axes')
-            ax = varargin{i+1};
+        if strcmpi(varargin{i}, 'parent')
+            parent = varargin{i+1};
         elseif strcmpi(varargin{i}, 'type')
             type = varargin{i+1};
         elseif strcmpi(varargin{i}, 'db')
@@ -43,9 +43,12 @@ else
     end
 end
 
-% If an axes is not provided (or stored), create a new figure/axes
-if ~exist('ax', 'var') || isempty(ax)
-    ax = gca;
+% If a parent is provided
+if ~exist('parent', 'var') || isempty(parent)
+    parent = figure;
+else
+    subplot(1,1,1, 'Parent', parent);
+    cla reset;
 end
 
 % If a db is not provided or stored, throw an error
@@ -58,10 +61,6 @@ if db.countReports() == 0
     Event('No records exist in the database, plotting ignored');
     return;
 end
-
-% Localize to current axes
-axes(ax);
-cla(ax, 'reset');
 
 % If type is an integer, execute by index
 if isinteger(type)

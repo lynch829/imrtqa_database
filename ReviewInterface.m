@@ -22,7 +22,7 @@ function varargout = ReviewInterface(varargin)
 
 % Edit the above text to modify the response to help ReviewInterface
 
-% Last Modified by GUIDE v2.5 23-Sep-2015 12:04:47
+% Last Modified by GUIDE v2.5 28-Sep-2015 14:27:36
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -154,13 +154,6 @@ if exist(fullfile(handles.path, handles.dbFile), 'file') == 2
 
     % Update database summary table
     handles = UpdateSummary(handles);
-
-    % Update plot using first option
-    plots = cellstr(get(handles.plot_types,'String'));
-    PlotData('axes', handles.plot_axes, 'db', handles.db, 'type', ...
-        plots{get(handles.plot_types,'Value')}, 'range', ...
-        [handles.range_low, handles.range_high], 'stats', handles.plot_stats);
-    clear plots;
 else
     
     % Otherwise, execute callback to prompt user to select a different db
@@ -213,7 +206,7 @@ if ~isequal(file, 0)
 
     % Update plot using first option
     plots = cellstr(get(handles.plot_types,'String'));
-    PlotData('axes', handles.plot_axes, 'db', handles.db, 'type', ...
+    PlotData('parent', handles.plot_axes, 'db', handles.db, 'type', ...
         plots{get(handles.plot_types,'Value')}, 'range', ...
         [handles.range_low, handles.range_high], 'stats', handles.plot_stats);
     clear plots;
@@ -300,7 +293,7 @@ if ~isequal(path, 0)
     
     % Update plots
     plots = cellstr(get(handles.plot_types,'String'));
-    PlotData('axes', handles.plot_axes, 'db', handles.db, 'type', ...
+    PlotData('parent', handles.plot_axes, 'db', handles.db, 'type', ...
         plots{get(handles.plot_types,'Value')}, 'range', ...
         [handles.range_low, handles.range_high], 'stats', ...
         handles.plot_stats);
@@ -339,7 +332,7 @@ if ~isequal(path, 0)
     
     % Update plots
     plots = cellstr(get(handles.plot_types,'String'));
-    PlotData('axes', handles.plot_axes, 'db', handles.db, 'type', ...
+    PlotData('parent', handles.plot_axes, 'db', handles.db, 'type', ...
         plots{get(handles.plot_types,'Value')}, 'range', ...
         [handles.range_low, handles.range_high], 'stats', ...
         handles.plot_stats);
@@ -373,7 +366,7 @@ set(hObject, 'Data', data);
 
 % Update plots
 plots = cellstr(get(handles.plot_types,'String'));
-PlotData('axes', handles.plot_axes, 'db', handles.db, 'type', ...
+PlotData('parent', handles.plot_axes, 'db', handles.db, 'type', ...
     plots{get(handles.plot_types,'Value')}, 'range', [handles.range_low, ...
     handles.range_high], 'stats', hObject);
 clear plots;
@@ -393,7 +386,7 @@ Event(['Plot changed to ', plots{get(hObject, 'Value')}]);
 
 % Update plots
 PlotData('type', plots{get(hObject,'Value')}, 'range', [handles.range_low, ...
-    handles.range_high], 'axes', handles.plot_axes, 'db', handles.db, ...
+    handles.range_high], 'parent', handles.plot_axes, 'db', handles.db, ...
     'stats', handles.plot_stats);
 clear plots;
 
@@ -451,7 +444,7 @@ end
 
 % Update plots
 plots = cellstr(get(handles.plot_types,'String'));
-PlotData('axes', handles.plot_axes, 'db', handles.db, 'type', ...
+PlotData('parent', handles.plot_axes, 'db', handles.db, 'type', ...
     plots{get(handles.plot_types,'Value')}, 'range', [handles.range_low, ...
     handles.range_high], 'stats', handles.plot_stats);
 
@@ -535,22 +528,25 @@ if ~isequal(file, 0)
     Event(['Default file path updated to ', path]);
     
     % Open new figure
-    f = figure('Color', [1 1 1], 'Position', [100 100 700 500]);
+    f = figure('Color', [1 1 1], 'Position', [100 100 400 300]);
     figure(f);
-    a = axes('Parent', f, 'FontSize', 12, 'FontName', 'Arial');
 
     % Plot data in new figure
-    PlotData('axes', a, 'db', handles.db, 'type', ...
+    PlotData('parent', f, 'db', handles.db, 'type', ...
         plots{get(handles.plot_types,'Value')}, 'range', [handles.range_low, ...
         handles.range_high], 'stats', handles.plot_stats);
     
     % Add title to plot
-    title(a, sprintf('%s, %s', plots{get(handles.plot_types, 'Value')}, ...
+    set(f, 'NextPlot', 'add');
+    axes('FontSize', 12, 'FontName', 'Arial');
+    h = title(sprintf('%s, %s\n', plots{get(handles.plot_types, 'Value')}, ...
         ranges{get(handles.range, 'Value')}));
+    set(gca, 'Visible', 'off');
+    set(h, 'Visible', 'on');
     
     % Save plot
     set(f, 'PaperUnits', 'centimeters');
-    set(f, 'PaperPosition', [0 0 35 25]);
+    set(f, 'PaperPosition', [0 0 20 15]);
     saveas(f, fullfile(path, file));
 
     % Close figure
@@ -621,4 +617,3 @@ set(handles.dbinfo, 'ColumnWidth', ...
 
 % Clear temporary variables
 clear pos;
-
