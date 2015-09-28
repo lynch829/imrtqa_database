@@ -186,7 +186,7 @@ methods
                     end
                 end
                 break;
-            elseif ~strcmp(varargin{1}, varargin{i})
+            elseif ~strcmp(varargin{i-2}, varargin{i})
                 where = true;
                 sql = [sql, ' LEFT JOIN ', varargin{i}, ' ON ', varargin{i}, ...
                     '.uid = ', varargin{1}, '.', varargin{i}, 'uid']; %#ok<*AGROW>
@@ -734,12 +734,17 @@ methods
             if isfield(record, 'totalTau')
                 data{21,2} = record.totalTau;
             end
-            data{22,1} = 'sinogram';
-            if isfield(record, 'sinogram')
-                data{22,2} = sprintf('%0.32e\t', record.sinogram);
+            data{22,1} = 'doseperfx';
+            if isfield(record, 'rxDose') && isfield(record, 'fractions') && ...
+                    record.fractions > 0
+                data{22,2} = record.rxDose / record.fractions;
             end
-            data{23,1} = 'rtplan';
-            data{23,2} = savejson('rtplan', record);
+            data{23,1} = 'sinogram';
+            if isfield(record, 'sinogram')
+                data{23,2} = sprintf('%0.32e\t', record.sinogram);
+            end
+            data{24,1} = 'rtplan';
+            data{24,2} = savejson('rtplan', record);
             
             % Insert row into database
             datainsert(obj.connection, 'tomo', data(:,1)', data(:,2)');
@@ -813,8 +818,13 @@ methods
             if isfield(record, 'fractions')
                 data{12,2} = record.fractions;
             end
-            data{13,1} = 'rtplan';
-            data{13,2} = savejson('rtplan', record);
+            data{13,1} = 'doseperfx';
+            if isfield(record, 'rxDose') && isfield(record, 'fractions') && ...
+                    record.fractions > 0
+                data{13,2} = record.rxDose / record.fractions;
+            end
+            data{14,1} = 'rtplan';
+            data{14,2} = savejson('rtplan', record);
             
             % Insert row into database
             datainsert(obj.connection, 'linac', data(:,1)', data(:,2)');
@@ -955,7 +965,7 @@ methods
         else
             
             % Add optimod column
-            sql = 'ALTER TABLE tomo ADD COLUMN optimod float';
+            sql = 'ALTER TABLE tomo ADD optimod float';
             exec(obj.connection, sql);
             
             % Loop through each record
@@ -992,6 +1002,74 @@ methods
                         sprintf('%0.4f', optimod), ', actualmod = ', ...
                         sprintf('%0.4f', actualmod)...
                         ' WHERE uid = ''', rows{i}, ''''];
+                    exec(obj.connection, sql);
+                end
+            end
+        end
+        
+        % Clear temporary variables
+        clear rows row cols i optimod actualmod lots s;
+    end
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    function dbUpgradeDosePerFx(obj)
+    % Upgrades the IMRT QA database to support dose per fraction
+       
+        % Query tomo table formt
+        sql = 'PRAGMA table_info(tomo)';
+        cursor = exec(obj.connection, sql);
+        cursor = fetch(cursor);  
+        cols = cursor.Data;
+        
+        % If optimod column does exists, this database was already upgraded
+        if ~ismember('doseperfx', cols(:,2))
+            error('The database has already been upgraded for optimod');
+        else
+            
+            % Add doseperfx column
+            sql = 'ALTER TABLE tomo ADD doseperfx float';
+            exec(obj.connection, sql);
+            
+            % Loop through each record
+            sql = 'SELECT uid, rxdose, fractions FROM tomo';
+            cursor = exec(obj.connection, sql);
+            cursor = fetch(cursor);  
+            rows = cursor.Data;
+            
+            % Loop through rows
+            for i = 1:length(rows)
+                
+                % If data exists
+                if rows{i,2} > 0 && rows{i,3} > 0
+                
+                    % Update record
+                    sql = ['UPDATE tomo SET doseperfx = ', ...
+                        sprintf('%0.4g', rows{i,2}/rows{i,3}), ...
+                        ' WHERE uid = ''', rows{i,1}, ''''];
+                    exec(obj.connection, sql);
+                end
+            end
+            
+            % Add doseperfx column
+            sql = 'ALTER TABLE linac ADD doseperfx float';
+            exec(obj.connection, sql);
+            
+            % Loop through each record
+            sql = 'SELECT uid, rxdose, fractions FROM linac';
+            cursor = exec(obj.connection, sql);
+            cursor = fetch(cursor);  
+            rows = cursor.Data;
+            
+            % Loop through rows
+            for i = 1:length(rows)
+                
+                % If data exists
+                if rows{i,2} > 0 && rows{i,3} > 0
+                
+                    % Update record
+                    sql = ['UPDATE linac SET doseperfx = ', ...
+                        sprintf('%0.4g', rows{i,2}/rows{i,3}), ...
+                        ' WHERE uid = ''', rows{i,1}, ''''];
                     exec(obj.connection, sql);
                 end
             end
