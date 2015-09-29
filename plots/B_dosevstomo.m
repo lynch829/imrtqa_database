@@ -2,7 +2,7 @@ function varargout = B_dosevstomo(varargin)
 
 % If no inputs are provided, return plot name
 if nargin == 0
-    varargout{1} = 'Dose vs. Tomo Plan Parameters';
+    varargout{1} = 'Dose vs. Tomo Parameters';
     return;
 else
     stats = [];
@@ -25,10 +25,22 @@ if ~isempty(stats)
 end
 
 % Query Delta4 dose difference/date and TomoTherapy plan parameters
-data = cell2mat(db.queryColumns('delta4', 'dosedev', 'delta4', 'measdate', ...
-    'delta4', 'temperature', 'tomo', 'doseperfx', 'tomo', 'pitch', 'tomo', ...
-    'fieldwidth', 'tomo', 'period', 'tomo', 'txtime', 'tomo', 'couchspeed', ...
-    'where', 'delta4', 'measdate', range));
+data = db.queryColumns('delta4', 'dosedev', 'delta4', 'measdate', ...
+    'delta4', 'temperature', 'tomo', 'machine', 'tomo', 'doseperfx', ...
+    'tomo', 'pitch', 'tomo', 'fieldwidth', 'tomo', 'period', 'tomo', ...
+    'txtime', 'tomo', 'couchspeed', ...
+    'where', 'delta4', 'measdate', range);
+
+% Convert machine column into numbers
+machines = unique(data(:,4));
+d = zeros(size(data,1),1);
+for i = 1:length(machines)
+    d = d + strcmp(data(:,4), machines{i}) * i;
+end
+data(:,4) = num2cell(d);
+
+% Convert to matrix
+data = cell2mat(data);
 
 % Remove columns with NaN
 data = data(~any(isnan(data),2),:);
@@ -50,19 +62,21 @@ if size(rows, 1) == size(data, 2)-1
     end
 end
 
-vars = {'Measured Date'
-    'Phantom Temp'
-    'Fraction Dose'
+vars = {
+    'Date'
+    'Temperature'
+    'Machine'
+    'Fx Dose'
     'Pitch'
     'Field Width'
-    'Gantry Period'
-    'Treatment Time'
+    'Period'
+    'Tx Time'
     'Couch Speed'
 };
 
 % Fit linear model to data
 try
-    m = fitlm(data(:,2:end), data(:,1), 'linear', 'RobustOpts', ...
+    m = fitlm(data(:,2:end), data(:,1), 'quadratic', 'RobustOpts', ...
         'bisquare', 'PredictorVars', vars);
     ci = coefCI(m, 0.05);
 catch err

@@ -1,8 +1,8 @@
-function varargout = B_dosedifferencemachine(varargin)
+function varargout = B_dosedifference(varargin)
 
 % If no inputs are provided, return plot name
 if nargin == 0
-    varargout{1} = 'Dose Difference (Machine)';
+    varargout{1} = 'Dose Difference';
     return;
 else
     stats = [];
@@ -26,7 +26,7 @@ end
 
 % Query dose differences, by machine
 data = db.queryColumns('delta4', 'dosedev', 'delta4', 'machine', ...
-    'where', 'delta4', 'measdate', range);
+    'delta4', 'phantom', 'where', 'delta4', 'measdate', range);
 
 % If no data was found
 if isempty(data)
@@ -40,6 +40,10 @@ e = -5:0.5:5;
 
 % Extract unique list of machines
 machines = unique(data(:,2));
+
+% Extract unique list of phantoms
+phantoms = unique(data(:,3));
+phantoms = phantoms(~strcmp(phantoms, 'Unknown'));
 
 % Update column names to this plot's statistics
 columns = {
@@ -55,6 +59,7 @@ columns = {
 };
 
 % Loop through machines, plotting histogram of dose differences
+subplot(2,1,1);
 hold on;
 for i = 1:length(machines)
 
@@ -97,17 +102,67 @@ end
 
 hold off;
 legend(machines(~strcmp(machines, '')));
-xlabel('Absolute Dose Difference (%)');
+xlabel('Abs Dose Difference (%)');
 ylabel('Relative Occurrence');
 box on;
 grid on;
+PlotBackground('vertical', [-3 -2 2 3]);
 
-% Add colored background
+% Loop through phantoms, plotting histogram of dose differences
+subplot(2,1,2);
+hold on;
+for i = 1:length(phantoms)
+
+    d = cell2mat(data(strcmp(data(:,3), phantoms{i}), 1));
+    rows{length(machines)+i,1} = phantoms{i};
+    rows{length(machines)+i,3} = sprintf('%i', length(d));
+
+    if length(d) > 1
+        [~, p, ci, s] = ttest(d, 0, 'Alpha', 0.05);
+        rows{length(machines)+i,4} = sprintf('%0.1f%%', mean(d));
+        rows{length(machines)+i,5} = sprintf('%0.1f%%', s.sd);
+        rows{length(machines)+i,6} = sprintf('%0.1f%%', min(d));
+        rows{length(machines)+i,7} = sprintf('%0.1f%%', max(d));
+        rows{length(machines)+i,8} = sprintf('%0.3f', p);
+        rows{length(machines)+i,9} = sprintf('[%0.1f%%, %0.1f%%]', ...
+            ci(1), ci(2));
+    else
+        rows{length(machines)+i,4} = '';
+        rows{length(machines)+i,5} = '';
+        rows{length(machines)+i,6} = '';
+        rows{length(machines)+i,7} = '';
+        rows{length(machines)+i,8} = '';
+        rows{length(machines)+i,9} = '';
+    end
+
+    % If a filter exists, and data is displayed
+    if (isempty(rows{length(machines)+i,2}) || ...
+            ~strcmp(rows{length(machines)+i,1}, phantoms{i}) || ...
+            rows{length(machines)+i,2}) && ~isempty(d)
+
+        c = histcounts(d, e);
+        plot((e(1):0.01:e(end)), interp1(e(1:end-1), c/sum(c), ...
+            (e(1):0.01:e(end))-(e(2)-e(1))/2, 'nearest', 'extrap'), ...
+            'LineWidth', 2);
+        rows{length(machines)+i,2} = true;
+    else   
+        phantoms{i} = '';
+        rows{length(machines)+i,2} = false;
+    end
+end
+
+hold off;
+legend(phantoms(~strcmp(phantoms, '')));
+xlabel('Abs Dose Difference (%)');
+ylabel('Relative Occurrence');
+box on;
+grid on;
 PlotBackground('vertical', [-3 -2 2 3]);
 
 % Update stats
 if ~isempty(stats)
-    set(stats, 'Data', rows(1:length(machines), 1:length(columns)));
+    set(stats, 'Data', rows(1:(length(machines)+length(phantoms)), ...
+        1:length(columns)));
     set(stats, 'ColumnName', columns);
 end
 

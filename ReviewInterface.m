@@ -22,7 +22,7 @@ function varargout = ReviewInterface(varargin)
 
 % Edit the above text to modify the response to help ReviewInterface
 
-% Last Modified by GUIDE v2.5 28-Sep-2015 14:27:36
+% Last Modified by GUIDE v2.5 29-Sep-2015 17:40:49
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -340,6 +340,21 @@ if ~isequal(path, 0)
 else
     Event('User did not select a path');
 end
+
+% Update handles structure
+guidata(hObject, handles);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function match_records_Callback(hObject, ~, handles)
+% hObject    handle to match_records (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Execute matchRecords
+handles.db.matchRecords('delta4', 'tomo', 1440);
+
+% Update database summary table
+handles = UpdateSummary(handles);
 
 % Update handles structure
 guidata(hObject, handles);

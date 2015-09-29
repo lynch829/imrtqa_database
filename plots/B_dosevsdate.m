@@ -1,8 +1,8 @@
-function varargout = B_dosevsdatemachine(varargin)
+function varargout = B_dosevsdate(varargin)
 
 % If no inputs are provided, return plot name
 if nargin == 0
-    varargout{1} = 'Dose vs. Date (Machine)';
+    varargout{1} = 'Dose vs. Date';
     return;
 else
     stats = [];
@@ -24,9 +24,10 @@ if ~isempty(stats)
     rows = get(stats, 'Data');
 end
 
-% Query dose differences, by machine
+% Query dose differences, machine, and phantom 
 data = db.queryColumns('delta4', 'dosedev', 'delta4', 'measdate', ...
-    'delta4', 'machine', 'where', 'delta4', 'measdate', range);
+    'delta4', 'machine', 'delta4', 'phantom', 'where', 'delta4', ...
+    'measdate', range);
 
 % If no data was found
 if isempty(data)
@@ -37,6 +38,10 @@ end
 
 % Extract unique list of machines
 machines = unique(data(:,3));
+
+% Extract unique list of phantoms
+phantoms = unique(data(:,4));
+phantoms = phantoms(~strcmp(phantoms, 'Unknown'));
 
 % Update column names to this plot's statistics
 columns = {
@@ -52,6 +57,7 @@ columns = {
 };
 
 % Loop through machines, plotting dose differences over time
+subplot(2,1,1);
 hold on;
 
 for i = 1:length(machines)
@@ -99,18 +105,73 @@ end
 
 hold off;
 legend(machines(~strcmp(machines, '')));
-ylabel('Absolute Dose Difference (%)');
+ylabel('Abs Dose Difference (%)');
 xlabel('');
-datetick('x','mm/dd/yyyy', 'keeplimits');
+datetick('x','mm/dd/yy', 'keepticks');
 box on;
 grid on;
+PlotBackground('horizontal', [-3 -2 2 3]);
 
-% Add colored background
+% Loop through phantoms, plotting dose differences over time
+subplot(2,1,2);
+hold on;
+
+for i = 1:length(phantoms)
+
+    d = cell2mat(data(strcmp(data(:,4), phantoms{i}), 1:2));
+    rows{length(machines)+i,1} = phantoms{i};
+    rows{length(machines)+i,3} = sprintf('%i', size(d,1));
+
+    if size(d,1) > 1
+        try
+            m = fitlm(d(:,2), d(:,1), 'linear', 'RobustOpts', 'bisquare');
+            ci = coefCI(m, 0.05);
+        catch err
+            Event(err.message, 'WARN');
+            warndlg(err.message);
+            return;
+        end
+        rows{length(machines)+i,4} = sprintf('%0.3f', m.Rsquared.Ordinary);
+        rows{length(machines)+i,5} = sprintf('%0.3f%%/day', m.Coefficients{2,1});
+        rows{length(machines)+i,6} = sprintf('%0.3f', m.Coefficients{2,2});
+        rows{length(machines)+i,7} = sprintf('%0.3f', m.Coefficients{2,3});
+        rows{length(machines)+i,8} = sprintf('%0.3f', m.Coefficients{2,4});
+        rows{length(machines)+i,9} = sprintf('[%0.3f%%, %0.3f%%]', ci(2,:));
+    else
+        rows{length(machines)+i,4} = '';
+        rows{length(machines)+i,5} = '';
+        rows{length(machines)+i,6} = '';
+        rows{length(machines)+i,7} = '';
+        rows{length(machines)+i,8} = '';
+        rows{length(machines)+i,9} = '';
+    end
+
+    % If a filter exists, and data is displayed
+    if (isempty(rows{length(machines)+i,2}) || ...
+            ~strcmp(rows{length(machines)+i,1}, phantoms{i}) || ...
+            rows{length(machines)+i,2}) && ~isempty(d)
+
+        plot(d(:,2), d(:,1), '.', 'MarkerSize', 30);
+        rows{length(machines)+i,2} = true;
+    else   
+        phantoms{i} = '';
+        rows{length(machines)+i,2} = false;
+    end
+end
+
+hold off;
+legend(phantoms(~strcmp(phantoms, '')));
+ylabel('Abs Dose Difference (%)');
+xlabel('');
+datetick('x','mm/dd/yy', 'keepticks');
+box on;
+grid on;
 PlotBackground('horizontal', [-3 -2 2 3]);
 
 % Update stats
 if ~isempty(stats)
-    set(stats, 'Data', rows(1:length(machines), 1:length(columns)));
+    set(stats, 'Data', rows(1:(length(machines)+length(phantoms)), ...
+        1:length(columns)));
     set(stats, 'ColumnName', columns);
 end
 
