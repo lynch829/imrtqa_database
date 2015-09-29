@@ -234,14 +234,21 @@ methods
         if nargin >= 4
             
             % Add first where statement
-            sql = [sql, ' WHERE ', varargin{1}, ' = ''', ...
-                strrep(varargin{2}, '''', ''), ''''];
+            if ~isempty(varargin{2})
+                sql = [sql, ' WHERE ', varargin{1}, ' = ''', ...
+                    strrep(varargin{2}, '''', ''), ''''];
+            else
+                sql = [sql, ' WHERE ', varargin{1}, ' IS NULL'];
+            end
             
             % Add subsequent where statements
             for i = 3:2:nargin-2
-                
-                sql = [sql, ' AND ', varargin{i}, ' = ''', ...
-                    strrep(varargin{i+1}, '''', ''), ''''];
+                if ~isempty(varargin{i+1})
+                    sql = [sql, ' AND ', varargin{i}, ' = ''', ...
+                        strrep(varargin{i+1}, '''', ''), ''''];
+                else
+                    sql = [sql, ' AND ', varargin{i}, ' IS NULL'];
+                end
             end
         end
         
@@ -293,6 +300,83 @@ methods
         
         % Clear temporary variables
         clear sql;
+    end
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    function matchRecords(obj, table1, table2, range)
+    % Searches for records in table1 that matches table2 within the same
+    % range. Users will be prompted with listdlg inputs with the
+    % opportunity to match records
+    
+        % Initialize select statement
+        sql = ['SELECT ', table1, '.id, ', table1, '.uid, ', table1, ...
+            '.plan, ', table1, '.plandate, ', table2, '.plan, ', table2, ...
+            '.plandate, ', table2, '.uid FROM ', table1, ' LEFT JOIN ', table2, ' ON ', ...
+            table1, '.id = ', table2, '.id AND ', table1, '.measdate > ', ...
+            table2, '.plandate-', sprintf('%0.3f', range/24), ' AND ', ...
+            table1, '.measdate < ', table2, '.plandate+', ...
+            sprintf('%0.3f', range/24), ' WHERE ', table2, '.plan IS NOT ', ...
+            'NULL AND ', table1, '.', table2, 'uid IS NULL'];
+        
+        % Execute query
+        cursor = exec(obj.connection, sql);
+        cursor = fetch(cursor);
+        data = cursor.Data;
+        
+        % Loop through results
+        i = 1;
+        while i <= length(data)
+            
+            % Add option to not match anything
+            opts = cell(2,2);
+            opts{1,1} = 'Do not match';
+            
+            % Add first option
+            opts{2,1} = [data{i,5}, ' (', datestr(data{i,6}), ')'];
+            opts{2,2} = data{i,7};
+            
+            % Add remaining options
+            for j = i+1:length(data)
+                if strcmp(data{i,1}, data{j,1}) && strcmp(data{i,3}, ...
+                        data{j,3}) && data{i,4} == data{j,4}
+                   opts{size(opts,1)+1,1} = [data{j,5}, ' (', ...
+                       datestr(data{j,6}), ')'];
+                   opts{size(opts,1),2} = data{j,7};
+                else
+                    i = j-1;
+                    break;
+                end
+            end
+            
+            % Open listdlg
+            [s, ok] = listdlg('PromptString', ['One or more ', table2, ...
+                ' plans matched the ', table1, ' QA report for patient ', ...
+                data{i,1}, ' plan ', data{i,3}, ' (', datestr(data{i,4}), ...
+                '):'], 'SelectionMode', 'single',...
+                'ListString', opts(:,1), 'ListSize', [600 100]);
+            
+            % Parse response
+            if ok
+                if s > 1
+                    sql = ['UPDATE ', table1, ' SET ', table2, 'uid = ''', ...
+                        opts{s,2}, ''' WHERE uid = ''', data{i,2}, ''''];
+                    exec(obj.connection, sql);
+                end
+            else
+                break;
+            end
+            
+            % Update index
+            i = i + 1;
+        end
+        
+        % Display completion
+        if ok
+            msgbox('All QA reports have been matched to RT plans');
+        end
+        
+        % Clear temporary variables
+        clear sql cursor data opts i j s ok;
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
