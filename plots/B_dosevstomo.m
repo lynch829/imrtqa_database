@@ -151,7 +151,7 @@ plotEffects(m);
 set(gca, 'YTickLabels', m.PredictorNames);
 box on;
 grid on;
-PlotBackground('vertical', [-20 -20 20 20]);
+PlotBackground('vertical', [-100 -100 100 100]);
 
 % Update stats
 if ~isempty(stats)

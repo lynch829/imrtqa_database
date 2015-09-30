@@ -48,6 +48,12 @@ columns = {
     'Dataset'
     'Show'
     'N'
+    'R^2'
+    'Slope'
+    'SE'
+    'T-Stat'
+    'P-Value'
+    '95% CI'
 };
 
 % Loop through machines, plotting gamma pass rate over time
@@ -59,6 +65,30 @@ for i = 1:length(machines)
     rows{i,1} = machines{i};
     rows{i,3} = sprintf('%i', size(d,1));
 
+    if size(d,1) > 1
+        try
+            m = fitlm(d(:,2), d(:,1), 'linear', 'RobustOpts', 'bisquare');
+            ci = coefCI(m, 0.05);
+        catch err
+            Event(err.message, 'WARN');
+            warndlg(err.message);
+            return;
+        end
+        rows{i,4} = sprintf('%0.3f', m.Rsquared.Ordinary);
+        rows{i,5} = sprintf('%0.3f%%/day', m.Coefficients{2,1});
+        rows{i,6} = sprintf('%0.3f', m.Coefficients{2,2});
+        rows{i,7} = sprintf('%0.3f', m.Coefficients{2,3});
+        rows{i,8} = sprintf('%0.3f', m.Coefficients{2,4});
+        rows{i,9} = sprintf('[%0.3f%%, %0.3f%%]', ci(2,:));
+    else
+        rows{i,4} = '';
+        rows{i,5} = '';
+        rows{i,6} = '';
+        rows{i,7} = '';
+        rows{i,8} = '';
+        rows{i,9} = '';
+    end
+    
     % If a filter exists, and data is displayed
     if (isempty(rows{i,2}) || ~strcmp(rows{i,1}, machines{i}) || ...
             rows{i,2}) && ~isempty(d)
@@ -90,6 +120,30 @@ for i = 1:length(phantoms)
     rows{length(machines)+i,1} = phantoms{i};
     rows{length(machines)+i,3} = sprintf('%i', size(d,1));
 
+    if size(d,1) > 1
+        try
+            m = fitlm(d(:,2), d(:,1), 'linear', 'RobustOpts', 'bisquare');
+            ci = coefCI(m, 0.05);
+        catch err
+            Event(err.message, 'WARN');
+            warndlg(err.message);
+            return;
+        end
+        rows{length(machines)+i,4} = sprintf('%0.3f', m.Rsquared.Ordinary);
+        rows{length(machines)+i,5} = sprintf('%0.3f%%/day', m.Coefficients{2,1});
+        rows{length(machines)+i,6} = sprintf('%0.3f', m.Coefficients{2,2});
+        rows{length(machines)+i,7} = sprintf('%0.3f', m.Coefficients{2,3});
+        rows{length(machines)+i,8} = sprintf('%0.3f', m.Coefficients{2,4});
+        rows{length(machines)+i,9} = sprintf('[%0.3f%%, %0.3f%%]', ci(2,:));
+    else
+        rows{length(machines)+i,4} = '';
+        rows{length(machines)+i,5} = '';
+        rows{length(machines)+i,6} = '';
+        rows{length(machines)+i,7} = '';
+        rows{length(machines)+i,8} = '';
+        rows{length(machines)+i,9} = '';
+    end
+    
     % If a filter exists, and data is displayed
     if (isempty(rows{length(machines)+i,2}) || ...
             ~strcmp(rows{length(machines)+i,1}, phantoms{i}) || ...
