@@ -26,18 +26,26 @@ end
 
 % Query Delta4 dose difference/date and TomoTherapy plan parameters
 data = db.queryColumns('delta4', 'dosedev', 'delta4', 'measdate', ...
-    'delta4', 'temperature', 'tomo', 'machine', 'tomo', 'doseperfx', ...
+    'delta4', 'phantom', 'delta4', 'temperature', 'tomo', 'machine', 'tomo', 'doseperfx', ...
     'tomo', 'pitch', 'tomo', 'fieldwidth', 'tomo', 'period', 'tomo', ...
     'txtime', 'tomo', 'couchspeed', ...
     'where', 'delta4', 'measdate', range);
 
+% Convert phantom column into numbers
+phantoms = unique(data(:,3));
+d = zeros(size(data,1),1);
+for i = 1:length(phantoms)
+    d = d + strcmp(data(:,3), phantoms{i}) * i;
+end
+data(:,3) = num2cell(d);
+
 % Convert machine column into numbers
-machines = unique(data(:,4));
+machines = unique(data(:,5));
 d = zeros(size(data,1),1);
 for i = 1:length(machines)
-    d = d + strcmp(data(:,4), machines{i}) * i;
+    d = d + strcmp(data(:,5), machines{i}) * i;
 end
-data(:,4) = num2cell(d);
+data(:,5) = num2cell(d);
 
 % Convert to matrix
 data = cell2mat(data);
@@ -64,6 +72,7 @@ end
 
 vars = {
     'Date'
+    'Phantom'
     'Temperature'
     'Machine'
     'Fx Dose'
@@ -74,34 +83,51 @@ vars = {
     'Couch Speed'
 };
 
-% Fit linear model to data
+% Remove unselected parameters
+for i = 1:length(vars)
+    if size(rows,1) >= i && strcmp(rows{i,1}, vars{i}) && ...
+            ~isempty(rows{i,2}) && ~rows{i,2}
+        data(:,i+1) = zeros(size(data,1),1);
+    end
+end
+
+% Perform N-way ANOVA
 try
+    [~, t, s] = anovan(data(:,1), data(:,2:end), ...
+        'varnames', vars, 'continuous', [1 3 5 6 7 8 9 10], ...
+        'display', 'off', 'model', 'linear');
     m = fitlm(data(:,2:end), data(:,1), 'quadratic', 'RobustOpts', ...
         'bisquare', 'PredictorVars', vars);
-    ci = coefCI(m, 0.05);
 catch err
     Event(err.message, 'WARN');
     warndlg(err.message);
     return;
 end
 
-% Define columns
-columns = {
-    'Predictor'
-    'Include'
-    'N'
-    'R^2'
-    'Slope'
-    'SE'
-    'T-Stat'
-    'P-Value'
-    '95% CI'
-};
+% Add show column
+t = horzcat(t(:,1), cell(size(t,1),1), t(:,2:end));
+for i = 2:size(t,1)
+    if size(rows,1) >= i-1 && strcmp(rows{i-1,1}, t{i,1}) && ...
+            ~isempty(rows{i-1,2}) && ~rows{i-1,2} && i-1 <= length(vars)
+        t{i,2} = false;
+    else
+        t{i,2} = true;
+    end
+end
+t{1,2} = 'Include';
+
+% Plot linear model effects
+subplot(2,2,[2,4]);
+plotEffects(m);
+set(gca, 'YTickLabels', m.PredictorNames);
+box on;
+grid on;
+PlotBackground('vertical', [-10 -10 10 10]);
 
 % Plot residuals
 subplot(2,2,[1 2]);
-plot(data(:,1), m.Residuals.Standardized, '.', 'MarkerSize', 30);
-ylabel('Standardized Residual');
+plot(data(:,1), s.resid, '.', 'MarkerSize', 30);
+ylabel('Residual');
 xlabel('Dose Deviation (%)');
 box on;
 grid on;
@@ -109,12 +135,12 @@ PlotBackground('horizontal', [-3 -2 2 3]);
 
 % Plot residual histogram
 subplot(2,2,3);
-[c, e] = histcounts(m.Residuals.Standardized);
+[c, e] = histcounts(s.resid);
 plot((e(1):0.01:e(end)), interp1(e(1:end-1), c, ...
     (e(1):0.01:e(end))-(e(2)-e(1))/2, 'nearest', 'extrap'), ...
     'LineWidth', 2);
 ylabel('Occurrence');
-xlabel('Standardized Residual');
+xlabel('Residual');
 box on;
 grid on;
 PlotBackground('vertical', [-3 -2 2 3]);
@@ -125,41 +151,12 @@ plotEffects(m);
 set(gca, 'YTickLabels', m.PredictorNames);
 box on;
 grid on;
-PlotBackground('vertical', [-10 -10 10 10]);
-
-% Create new rows array
-rows = cell(size(data,2)-1, 9);
-
-% Report regression statistics
-for i = 1:size(data, 2)-1
-    rows{i,1} = m.PredictorNames{i};
-    if any(data(:,i+1))
-        rows{i,2} = true;
-    else
-        rows{i,2} = false;
-    end
-    rows{i,3} = sprintf('%i', m.NumObservations);
-    if ~isnan(m.Coefficients{i+1,4})
-        rows{i,4} = sprintf('%0.3f', m.Rsquared.Ordinary);
-        rows{i,5} = sprintf('%0.3f', m.Coefficients{i+1,1});
-        rows{i,6} = sprintf('%0.3f', m.Coefficients{i+1,2});
-        rows{i,7} = sprintf('%0.3f', m.Coefficients{i+1,3});
-        rows{i,8} = sprintf('%0.3f', m.Coefficients{i+1,4});
-        rows{i,9} = sprintf('[%0.3f%%, %0.3f%%]', ci(i+1,:));
-    else
-        rows{i,4} = '';
-        rows{i,5} = '';
-        rows{i,6} = '';
-        rows{i,7} = '';
-        rows{i,8} = '';
-        rows{i,9} = '';
-    end
-end
+PlotBackground('vertical', [-20 -20 20 20]);
 
 % Update stats
 if ~isempty(stats)
-    set(stats, 'Data', rows);
-    set(stats, 'ColumnName', columns);
+    set(stats, 'Data', t(2:end,:));
+    set(stats, 'ColumnName', t(1,:));
 end
 
 % Clear temporary variables
