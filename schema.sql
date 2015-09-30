@@ -57,6 +57,12 @@ couchlength float,
 planmod float,
 optimod float,
 actualmod float,
+iterations int,
+optigrid varchar(16),
+calcgrid varchar(16),
+laserx float,
+lasery float,
+laserz float,
 sinogram blob,
 rtplan blob);
 

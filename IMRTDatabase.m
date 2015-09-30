@@ -841,6 +841,30 @@ methods
             elseif isfield(record, 'PatientSex')
                 data{26,2} = record.PatientSex(1);
             end
+            data{27,1} = 'iterations';
+            if isfield(record, 'iterations')
+                data{27,2} = record.iterations;
+            end
+            data{28,1} = 'optigrid';
+            if isfield(record, 'optimizationCalcGrid')
+                data{28,2} = record.optimizationCalcGrid;
+            end
+            data{29,1} = 'calcgrid';
+            if isfield(record, 'calcGrid')
+                data{29,2} = record.calcGrid;
+            end
+            data{30,1} = 'laserx';
+            if isfield(record, 'movableLaser')
+                data{30,2} = record.movableLaser(1);
+            end
+            data{31,1} = 'lasery';
+            if isfield(record, 'movableLaser')
+                data{31,2} = record.movableLaser(2);
+            end
+            data{32,1} = 'laserz';
+            if isfield(record, 'movableLaser')
+                data{32,2} = record.movableLaser(3);
+            end
             
             % Insert row into database
             datainsert(obj.connection, 'tomo', data(:,1)', data(:,2)');
@@ -1199,17 +1223,19 @@ methods
         
         % If birthdate column does exists, this database was already 
         % upgraded
-        if ismember('birthdate', cols(:,2))
+        if ~ismember('birthdate', cols(:,2))
             error(['The database has already been upgraded for patient ', ...
                 'demographics']);
         else
             
             % Add birthdate, sex columns
-            sql = 'ALTER TABLE tomo ADD birthdate float ADD sex varchar(16)';
+            sql = 'ALTER TABLE tomo ADD birthdate float';
+            exec(obj.connection, sql);
+            sql = 'ALTER TABLE tomo ADD sex varchar(16)';
             exec(obj.connection, sql);
             
             % Loop through each record
-            sql = 'SELECT uid, rtplan FROM tomo';
+            sql = 'SELECT uid FROM tomo';
             cursor = exec(obj.connection, sql);
             cursor = fetch(cursor);  
             rows = cursor.Data;
@@ -1217,18 +1243,26 @@ methods
             % Loop through rows
             for i = 1:length(rows)
                 
+                % Retrieve rtplan
+                sql = ['SELECT rtplan FROM tomo WHERE uid = ''', ...
+                    rows{i,1}, ''''];
+                cursor = exec(obj.connection, sql);
+                cursor = fetch(cursor);  
+                row = cursor.Data;
+                
                 % If rtplan data exists
-                if ~isempty(rows{i,2})
+                if ~isempty(row{1})
                 
                     % Load RTplan object
-                    r = loadjson(rows{i,2});
+                    r = loadjson(row{1});
                     
                     % If birthdate exists, add it
                     if isfield(r.rtplan, 'patientBirthDate')
                         
                         % Update record
                         sql = ['UPDATE tomo SET birthdate = ', ...
-                            datenum(r.rtplan.patientBirthDate, 'YYYYMMDD'), ...
+                            sprintf('%0.8f', ...
+                            datenum(r.rtplan.patientBirthDate, 'YYYYMMDD')), ...
                             ' WHERE uid = ''', rows{i,1}, ''''];
                         exec(obj.connection, sql);
                         
@@ -1236,7 +1270,8 @@ methods
                         
                         % Update record
                         sql = ['UPDATE tomo SET birthdate = ', ...
-                            datenum(r.rtplan.PatientBirthDate, 'YYYYMMDD'), ...
+                            sprintf('%0.8f', ...
+                            datenum(r.rtplan.PatientBirthDate, 'YYYYMMDD')), ...
                             ' WHERE uid = ''', rows{i,1}, ''''];
                         exec(obj.connection, sql);
                     end
@@ -1262,11 +1297,13 @@ methods
             end
             
             % Add birthdate, sex columns
-            sql = 'ALTER TABLE linac ADD birthdate float ADD sex varchar(16)';
+            sql = 'ALTER TABLE linac ADD birthdate float';
+            exec(obj.connection, sql);
+            sql = 'ALTER TABLE linac ADD sex varchar(16)';
             exec(obj.connection, sql);
             
             % Loop through each record
-            sql = 'SELECT uid, rtplan FROM linac';
+            sql = 'SELECT uid FROM linac';
             cursor = exec(obj.connection, sql);
             cursor = fetch(cursor);  
             rows = cursor.Data;
@@ -1274,18 +1311,26 @@ methods
             % Loop through rows
             for i = 1:length(rows)
                 
+                % Retrieve rtplan
+                sql = ['SELECT rtplan FROM linac WHERE uid = ''', ...
+                    rows{i,1}, ''''];
+                cursor = exec(obj.connection, sql);
+                cursor = fetch(cursor);  
+                row = cursor.Data;
+                
                 % If rtplan data exists
-                if ~isempty(rows{i,2})
+                if ~isempty(row{1})
                 
                     % Load RTplan object
-                    r = loadjson(rows{i,2});
+                    r = loadjson(row{1});
                     
                     % If birthdate exists, add it
                     if isfield(r.rtplan, 'patientBirthDate')
                         
-                        % Update record
+                       % Update record
                         sql = ['UPDATE linac SET birthdate = ', ...
-                            datenum(r.rtplan.patientBirthDate, 'YYYYMMDD'), ...
+                            sprintf('%0.8f', ...
+                            datenum(r.rtplan.patientBirthDate, 'YYYYMMDD')), ...
                             ' WHERE uid = ''', rows{i,1}, ''''];
                         exec(obj.connection, sql);
                         
@@ -1293,7 +1338,8 @@ methods
                         
                         % Update record
                         sql = ['UPDATE linac SET birthdate = ', ...
-                            datenum(r.rtplan.PatientBirthDate, 'YYYYMMDD'), ...
+                            sprintf('%0.8f', ...
+                            datenum(r.rtplan.PatientBirthDate, 'YYYYMMDD')), ...
                             ' WHERE uid = ''', rows{i,1}, ''''];
                         exec(obj.connection, sql);
                     end
@@ -1320,7 +1366,123 @@ methods
         end
         
         % Clear temporary variables
-        clear rows row cols i r;
+        clear rows row i r;
+    end
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    function dbUpgradeTomoPlanParams(obj)
+    % Upgrades the IMRT QA database to support additional tomo plan params
+       
+        % Query tomo table formt
+        sql = 'PRAGMA table_info(tomo)';
+        cursor = exec(obj.connection, sql);
+        cursor = fetch(cursor);  
+        cols = cursor.Data;
+        
+        % If laserz column does exists, this database was already upgraded
+        if ~ismember('laserz', cols(:,2))
+            error('The database has already been upgraded for plan params');
+        else
+            
+            % Add iterations, optigrid, calcgird, and laser columns
+            sql = 'ALTER TABLE tomo ADD iterations int';
+            exec(obj.connection, sql);
+            sql = 'ALTER TABLE tomo ADD optigrid varchar(16)';
+            exec(obj.connection, sql);
+            sql = 'ALTER TABLE tomo ADD calcgrid varchar(16)';
+            exec(obj.connection, sql);
+            sql = 'ALTER TABLE tomo ADD laserx float';
+            exec(obj.connection, sql);
+            sql = 'ALTER TABLE tomo ADD lasery float';
+            exec(obj.connection, sql);
+            sql = 'ALTER TABLE tomo ADD laserz float';
+            exec(obj.connection, sql);
+            
+            % Loop through each record
+            sql = 'SELECT uid FROM tomo';
+            cursor = exec(obj.connection, sql);
+            cursor = fetch(cursor);  
+            rows = cursor.Data;
+            
+            % Loop through rows
+            for i = 1:length(rows)
+                
+                % Retrieve rtplan
+                sql = ['SELECT rtplan FROM tomo WHERE uid = ''', ...
+                    rows{i,1}, ''''];
+                cursor = exec(obj.connection, sql);
+                cursor = fetch(cursor);  
+                row = cursor.Data;
+                
+                % If rtplan data exists
+                if ~isempty(row{1})
+                
+                    % Load RTplan object
+                    r = loadjson(row{1});
+                    
+                    % If iterations exists, add it
+                    if isfield(r.rtplan, 'iterations')
+                        
+                        if ischar(r.rtplan.iterations)
+                            r.rtplan.iterations = ...
+                                str2double(r.rtplan.iterations);
+                        end
+                        
+                        % Update record
+                        sql = ['UPDATE tomo SET iterations = ', ...
+                            sprintf('%i', r.rtplan.iterations), ...
+                            ' WHERE uid = ''', ...
+                            rows{i,1}, ''''];
+                        exec(obj.connection, sql);
+                    end
+                    
+                    % If optigrid exists, add it
+                    if isfield(r.rtplan, 'optimizationCalcGrid')
+                        
+                        % Update record
+                        sql = ['UPDATE tomo SET optigrid = ''', ...
+                            r.rtplan.optimizationCalcGrid, ...
+                            ''' WHERE uid = ''', rows{i,1}, ''''];
+                        exec(obj.connection, sql);
+                    end
+                    
+                    % If calcgrid exists, add it
+                    if isfield(r.rtplan, 'calcGrid')
+                        
+                        % Update record
+                        sql = ['UPDATE tomo SET calcgrid = ''', ...
+                            r.rtplan.calcGrid, ''' WHERE uid = ''', ...
+                            rows{i,1}, ''''];
+                        exec(obj.connection, sql);
+                    end
+                    
+                    % If lasers exists, add it
+                    if isfield(r.rtplan, 'movableLaser')
+                        
+                        % Update record
+                        sql = ['UPDATE tomo SET laserx = ', ...
+                            sprintf('%0.4f', r.rtplan.movableLaser(1)), ...
+                            ' WHERE uid = ''', rows{i,1}, ''''];
+                        exec(obj.connection, sql);
+                        
+                        % Update record
+                        sql = ['UPDATE tomo SET lasery = ', ...
+                            sprintf('%0.4f', r.rtplan.movableLaser(2)), ...
+                            ' WHERE uid = ''', rows{i,1}, ''''];
+                        exec(obj.connection, sql);
+                        
+                        % Update record
+                        sql = ['UPDATE tomo SET laserz = ', ...
+                            sprintf('%0.4f', r.rtplan.movableLaser(3)), ...
+                            ' WHERE uid = ''', rows{i,1}, ''''];
+                        exec(obj.connection, sql);
+                    end
+                end
+            end
+        end
+        
+        % Clear temporary variables
+        clear rows row i r;
     end
 end
 end
