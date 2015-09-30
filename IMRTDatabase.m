@@ -1228,7 +1228,7 @@ methods
         
         % If birthdate column does exists, this database was already 
         % upgraded
-        if ~ismember('birthdate', cols(:,2))
+        if ismember('birthdate', cols(:,2))
             error(['The database has already been upgraded for patient ', ...
                 'demographics']);
         else
@@ -1385,7 +1385,7 @@ methods
         cols = cursor.Data;
         
         % If laserz column does exists, this database was already upgraded
-        if ~ismember('laserz', cols(:,2))
+        if ismember('laserz', cols(:,2))
             error('The database has already been upgraded for plan params');
         else
             
