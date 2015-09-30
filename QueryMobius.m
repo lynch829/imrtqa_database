@@ -289,7 +289,36 @@ if nargout >= 2
         varargout{2} = [];
     end
 end
+  
+% If user requested DVH file
+if nargout >= 3
+
+    % If a plan was found
+    if ~isempty(id) && (~isempty(plan) || ~isempty(date)) && ...
+            ~isempty(json) && isfield(json, 'settings')
     
+        % Retrieve JSON DVH information
+        if exist('Event', 'file') == 2
+            Event('Retrieving DVH JSON data');
+        end
+
+        r = s.get(['http://', server, '/check/attachment/', ...
+            char(planCheck{'request_cid'}), '/dvhChart_data.json']);
+        dvhData = r.json();
+
+        if exist('Event', 'file') == 2
+            Event(sprintf(['DVH data retrieved in %0.3f ', ...
+                'seconds'], double(r.elapsed.seconds) + ...
+                double(r.elapsed.microseconds)/1e6));
+        end
+
+        % Retrieve JSON plan data
+        varargout{3} = loadjson(char(py.json.dumps(dvhData)));
+    else
+        varargout{3} = [];
+    end
+end
+
 % Log finish
 if exist('Event', 'file') == 2
     Event(sprintf(['Mobius3D query completed successfully in %0.3f', ...

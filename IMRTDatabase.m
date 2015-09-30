@@ -1019,8 +1019,13 @@ methods
             if isfield(record, 'version')
                 data{9,2} = record.version{4};
             end
-            data{10,1} = 'plancheck';
-            data{10,2} = savejson('plancheck', record);
+            data{10,1} = 'dvh';
+            if isfield(record, 'dvh')
+                data{10,2} = savejson('dvh', record.dvh);
+                record = rmfield(record, 'dvh');
+            end
+            data{11,1} = 'plancheck';
+            data{11,2} = savejson('plancheck', record);
             
             % Insert row into database
             datainsert(obj.connection, 'mobius', data(:,1)', data(:,2)');

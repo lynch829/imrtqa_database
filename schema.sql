@@ -94,6 +94,7 @@ abs float,
 dta float,
 gammapassrate float,
 version varchar(16),
+dvh blob,
 plancheck blob);
 
 CREATE TABLE scannedfiles (
