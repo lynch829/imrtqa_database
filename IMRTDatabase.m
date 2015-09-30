@@ -829,6 +829,18 @@ methods
             end
             data{24,1} = 'rtplan';
             data{24,2} = savejson('rtplan', record);
+            data{25,1} = 'birthdate';
+            if isfield(record, 'patientBirthDate')
+                data{25,2} = datenum(record.patientBirthDate, 'YYYYMMDD');
+            elseif isfield(record, 'PatientBirthDate')
+                data{25,2} = datenum(record.PatientBirthDate, 'YYYYMMDD');
+            end
+            data{26,1} = 'sex';
+            if isfield(record, 'patientSex')
+                data{26,2} = record.patientSex(1);
+            elseif isfield(record, 'PatientSex')
+                data{26,2} = record.PatientSex(1);
+            end
             
             % Insert row into database
             datainsert(obj.connection, 'tomo', data(:,1)', data(:,2)');
@@ -909,6 +921,18 @@ methods
             end
             data{14,1} = 'rtplan';
             data{14,2} = savejson('rtplan', record);
+            data{15,1} = 'birthdate';
+            if isfield(record, 'patientBirthDate')
+                data{15,2} = datenum(record.patientBirthDate, 'YYYYMMDD');
+            elseif isfield(record, 'PatientBirthDate')
+                data{15,2} = datenum(record.PatientBirthDate, 'YYYYMMDD');
+            end
+            data{16,1} = 'sex';
+            if isfield(record, 'patientSex')
+                data{16,2} = record.patientSex(1);
+            elseif isfield(record, 'PatientSex')
+                data{16,2} = record.PatientSex(1);
+            end
             
             % Insert row into database
             datainsert(obj.connection, 'linac', data(:,1)', data(:,2)');
@@ -1161,6 +1185,142 @@ methods
         
         % Clear temporary variables
         clear rows row cols i optimod actualmod lots s;
+    end
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    function dbUpgradePatientDemographics(obj)
+    % Upgrades the IMRT QA database to support patient demographic queries
+       
+        % Query tomo table formt
+        sql = 'PRAGMA table_info(tomo)';
+        cursor = exec(obj.connection, sql);
+        cursor = fetch(cursor);  
+        cols = cursor.Data;
+        
+        % If birthdate column does exists, this database was already 
+        % upgraded
+        if ismember('birthdate', cols(:,2))
+            error(['The database has already been upgraded for patient ', ...
+                'demographics']);
+        else
+            
+            % Add birthdate, sex columns
+            sql = 'ALTER TABLE tomo ADD birthdate float ADD sex varchar(16)';
+            exec(obj.connection, sql);
+            
+            % Loop through each record
+            sql = 'SELECT uid, rtplan FROM tomo';
+            cursor = exec(obj.connection, sql);
+            cursor = fetch(cursor);  
+            rows = cursor.Data;
+            
+            % Loop through rows
+            for i = 1:length(rows)
+                
+                % If rtplan data exists
+                if ~isempty(rows{i,2})
+                
+                    % Load RTplan object
+                    r = loadjson(rows{i,2});
+                    
+                    % If birthdate exists, add it
+                    if isfield(r.rtplan, 'patientBirthDate')
+                        
+                        % Update record
+                        sql = ['UPDATE tomo SET birthdate = ', ...
+                            datenum(r.rtplan.patientBirthDate, 'YYYYMMDD'), ...
+                            ' WHERE uid = ''', rows{i,1}, ''''];
+                        exec(obj.connection, sql);
+                        
+                    elseif isfield(r.rtplan, 'PatientBirthDate')
+                        
+                        % Update record
+                        sql = ['UPDATE tomo SET birthdate = ', ...
+                            datenum(r.rtplan.PatientBirthDate, 'YYYYMMDD'), ...
+                            ' WHERE uid = ''', rows{i,1}, ''''];
+                        exec(obj.connection, sql);
+                    end
+                    
+                    % If sex exists, add it
+                    if isfield(r.rtplan, 'patientSex')
+                        
+                        % Update record
+                        sql = ['UPDATE tomo SET sex = ''', ...
+                            r.rtplan.patientSex(1), ''' WHERE uid = ''', ...
+                            rows{i,1}, ''''];
+                        exec(obj.connection, sql);
+                        
+                    elseif isfield(r.rtplan, 'PatientSex')
+                        
+                        % Update record
+                        sql = ['UPDATE tomo SET sex = ''', ...
+                            r.rtplan.PatientSex(1), ''' WHERE uid = ''', ...
+                            rows{i,1}, ''''];
+                        exec(obj.connection, sql);
+                    end
+                end
+            end
+            
+            % Add birthdate, sex columns
+            sql = 'ALTER TABLE linac ADD birthdate float ADD sex varchar(16)';
+            exec(obj.connection, sql);
+            
+            % Loop through each record
+            sql = 'SELECT uid, rtplan FROM linac';
+            cursor = exec(obj.connection, sql);
+            cursor = fetch(cursor);  
+            rows = cursor.Data;
+            
+            % Loop through rows
+            for i = 1:length(rows)
+                
+                % If rtplan data exists
+                if ~isempty(rows{i,2})
+                
+                    % Load RTplan object
+                    r = loadjson(rows{i,2});
+                    
+                    % If birthdate exists, add it
+                    if isfield(r.rtplan, 'patientBirthDate')
+                        
+                        % Update record
+                        sql = ['UPDATE linac SET birthdate = ', ...
+                            datenum(r.rtplan.patientBirthDate, 'YYYYMMDD'), ...
+                            ' WHERE uid = ''', rows{i,1}, ''''];
+                        exec(obj.connection, sql);
+                        
+                    elseif isfield(r.rtplan, 'PatientBirthDate')
+                        
+                        % Update record
+                        sql = ['UPDATE linac SET birthdate = ', ...
+                            datenum(r.rtplan.PatientBirthDate, 'YYYYMMDD'), ...
+                            ' WHERE uid = ''', rows{i,1}, ''''];
+                        exec(obj.connection, sql);
+                    end
+                    
+                    % If sex exists, add it
+                    if isfield(r.rtplan, 'patientSex')
+                        
+                        % Update record
+                        sql = ['UPDATE linac SET sex = ''', ...
+                            r.rtplan.patientSex(1), ''' WHERE uid = ''', ...
+                            rows{i,1}, ''''];
+                        exec(obj.connection, sql);
+                        
+                    elseif isfield(r.rtplan, 'PatientSex')
+                        
+                        % Update record
+                        sql = ['UPDATE linac SET sex = ''', ...
+                            r.rtplan.PatientSex(1), ''' WHERE uid = ''', ...
+                            rows{i,1}, ''''];
+                        exec(obj.connection, sql);
+                    end
+                end
+            end
+        end
+        
+        % Clear temporary variables
+        clear rows row cols i r;
     end
 end
 end
