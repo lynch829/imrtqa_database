@@ -104,6 +104,7 @@ for i = 1:length(machines)
 end
 
 hold off;
+ylim([90 100]);
 legend(machines(~strcmp(machines, '')));
 ylabel('Gamma Index Pass Rate (%)');
 xlabel('');
@@ -160,6 +161,7 @@ for i = 1:length(phantoms)
 end
 
 hold off;
+ylim([90 100]);
 legend(phantoms(~strcmp(phantoms, '')));
 ylabel('Gamma Index Pass Rate (%)');
 xlabel('');
