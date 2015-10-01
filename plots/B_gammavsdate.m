@@ -67,7 +67,8 @@ for i = 1:length(machines)
 
     if size(d,1) > 1
         try
-            m = fitlm(d(:,2), d(:,1), 'linear', 'RobustOpts', 'bisquare');
+            m = fitlm(d(:,2), d(:,1), 'linear', 'RobustOpts', ...
+                'bisquare', 'Intercept', false);
             ci = coefCI(m, 0.05);
         catch err
             Event(err.message, 'WARN');
@@ -75,11 +76,11 @@ for i = 1:length(machines)
             return;
         end
         rows{i,4} = sprintf('%0.3f', m.Rsquared.Ordinary);
-        rows{i,5} = sprintf('%0.3f%%/day', m.Coefficients{2,1});
-        rows{i,6} = sprintf('%0.3f', m.Coefficients{2,2});
-        rows{i,7} = sprintf('%0.3f', m.Coefficients{2,3});
-        rows{i,8} = sprintf('%0.3f', m.Coefficients{2,4});
-        rows{i,9} = sprintf('[%0.3f%%, %0.3f%%]', ci(2,:));
+        rows{i,5} = sprintf('%0.3f%%/day', m.Coefficients{1,1});
+        rows{i,6} = sprintf('%0.3f', m.Coefficients{1,2});
+        rows{i,7} = sprintf('%0.3f', m.Coefficients{1,3});
+        rows{i,8} = sprintf('%0.3f', m.Coefficients{1,4});
+        rows{i,9} = sprintf('[%0.3f%%, %0.3f%%]', ci(1,:));
     else
         rows{i,4} = '';
         rows{i,5} = '';

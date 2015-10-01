@@ -117,18 +117,21 @@ for i = 1:size(data,2)-1
     
     if rows{i,2}
         l{length(l)+1} = rows{i,1};
-        plot(data(:,1), m.Residuals.Standardized, '.', 'MarkerSize', 30);
+        [c, e] = histcounts(m.Residuals.Standardized);
+        plot((e(1):0.01:e(end)), interp1(e(1:end-1), c, ...
+            (e(1):0.01:e(end))-(e(2)-e(1))/2, 'nearest', 'extrap'), ...
+            'LineWidth', 2);
     end
 end
 hold off;
 if length(l) > 1
     legend(l);
 end
-ylabel('Standardized Residual');
-xlabel('Phantom Temperature');
+ylabel('Occurrence');
+xlabel('Standardized Residual');
 box on;
 grid on;
-PlotBackground('vertical', [21 22 25 26]);
+PlotBackground('vertical', [-3 -2 2 3]);
 
 % Update stats
 if ~isempty(stats)

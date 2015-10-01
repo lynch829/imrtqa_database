@@ -88,9 +88,10 @@ xlabel('');
 datetick('x','mm/dd/yyyy');
 box on;
 grid on;
+ylim([0.9 1.1]);
 
 % Add colored background
-PlotBackground('horizontal', [0.9 0.95 1.05 1.10]);
+PlotBackground('horizontal', [0.95 0.98 1.02 1.05]);
 
 % Update stats
 if ~isempty(stats)
