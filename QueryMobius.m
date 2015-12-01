@@ -116,7 +116,7 @@ if exist('loadjson', 'file') ~= 2
         'MathWorks.com website'], 'ERROR');
 end
 
-% Initialize Python batch file
+% Initialize Python session
 try
     s = py.requests.Session();
 catch
