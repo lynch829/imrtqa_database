@@ -32,16 +32,18 @@ methods
             setdbprefs('DataReturnFormat', 'cellarray');
         else
             if exist('Event', 'file') == 2
-                Event(['The SQLite3 database file is missing', db], ...
+                Event(['The SQLite3 database file is missing: ', db], ...
                     'ERROR');
             else
-                error(['The SQLite3 database file is missing', db]);
+                error(['The SQLite3 database file is missing: ', db]);
             end
         end
     end
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     function close(obj)
+        
+        % Close the database
         close(obj.connection);
     end
     
@@ -199,11 +201,14 @@ methods
         else
             sql = [sql, ' WHERE ', varargin{2}, ' IS NOT NULL'];
         end
+        sql = [sql, ' AND ', varargin{2}, ' <> ''NaN'''];
+        
         for i = 3:2:nargin-1
             if strcmpi(varargin{i}, 'where')
                 break;
             else
                 sql = [sql, ' AND ', varargin{i+1}, ' IS NOT NULL'];
+                sql = [sql, ' AND ', varargin{i+1}, ' <> ''NaN'''];
             end
         end
         cursor = exec(obj.connection, sql);
@@ -930,18 +935,31 @@ methods
                 end
                 data{10,2} = cps;
             end
-            data{11,1} = 'rxdose';
-            if isfield(record, 'rxDose')
-                data{11,2} = record.rxDose;
+            data{11,1} = 'doseperfx';
+            if isfield(record, 'FractionGroupSequence') && ...
+                    isfield(record.FractionGroupSequence, 'Item_1') && ...
+                    isfield(record.FractionGroupSequence.Item_1, ...
+                    'ReferencedBeamSequence')
+                d = 0;
+                for i = 1:length(fieldnames(record.FractionGroupSequence.Item_1...
+                        .ReferencedBeamSequence))
+                    d = d + record.FractionGroupSequence.Item_1...
+                        .ReferencedBeamSequence.(sprintf('Item_%i', i))...
+                        .BeamDose;
+                end
+                data{11,2} = d;
             end
             data{12,1} = 'fractions';
-            if isfield(record, 'fractions')
-                data{12,2} = record.fractions;
+            if isfield(record, 'FractionGroupSequence') && ...
+                    isfield(record.FractionGroupSequence, 'Item_1') && ...
+                    isfield(record.FractionGroupSequence.Item_1, ...
+                    'NumberOfFractionsPlanned')
+                data{12,2} = record.FractionGroupSequence.Item_1...
+                    .NumberOfFractionsPlanned;
             end
-            data{13,1} = 'doseperfx';
-            if isfield(record, 'rxDose') && isfield(record, 'fractions') && ...
-                    record.fractions > 0
-                data{13,2} = record.rxDose / record.fractions;
+            data{13,1} = 'rxdose';
+            if data{11,2} > 0 && data{12,2} > 0
+                data{13,2} = data{11,2} * data{12,2};
             end
             data{14,1} = 'rtplan';
             data{14,2} = savejson('rtplan', record);
@@ -1032,7 +1050,7 @@ methods
         end
         
         % Clear temporary variables
-        clear data;
+        clear data d i;
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
