@@ -1,4 +1,4 @@
-database.db
+*.db
 log.txt
 *.m~
 .smbdelete*
