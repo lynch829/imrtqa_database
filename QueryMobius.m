@@ -277,14 +277,24 @@ if nargout >= 2
                 double(r.elapsed.microseconds)/1e6));
         end
         
-        if exist('Event', 'file') == 2
-            Event('Parsing JSON into MATLAB structure return argument');
+        % If RT Plan JSON data is not empty
+        if ~isempty(cell(keys(r.json)))
+            if exist('Event', 'file') == 2
+                Event('Parsing JSON into MATLAB structure return argument');
+            end
+
+            % Replace all tag names with their Group/Element codes, using the
+            % format GXXXXEXXXX
+            varargout{2} = loadjson(regexprep(char(py.json.dumps(r.json())), ...
+                '"\(([0-9a-z]+), ([0-9a-z]+)\)[^"]+"', '"G$1E$2"'));
+            
+        else
+            Event('RT Plan is empty and will not be returned', 'WARN');
+            varargout{2} = [];
         end
         
-        % Replace all tag names with their Group/Element codes, using the
-        % format GXXXXEXXXX
-        varargout{2} = loadjson(regexprep(char(py.json.dumps(r.json())), ...
-            '"\(([0-9a-z]+), ([0-9a-z]+)\)[^"]+"', '"G$1E$2"'));
+        
+        
     else
         varargout{2} = [];
     end
