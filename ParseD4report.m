@@ -186,7 +186,10 @@ while r < length(content)
     % If row starts with 'Temperature:'
     if length(content{r}) > 12 && strcmp(content{r}(1:12), 'Temperature:')
         fields = regexp(content{r}(13:end), '([0-9\.]+)', 'tokens');
-        delta4.temperature = str2double(fields{1}(1));
+        
+        if ~isempty(fields)
+            delta4.temperature = str2double(fields{1}(1));
+        end
         break;
     else
         r = r + 1;
