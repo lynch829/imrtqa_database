@@ -137,6 +137,19 @@ set(handles.plot_types, 'Value', 1);
 % Log default path
 Event(['Default file path set to ', handles.path]);
 
+% Add jsonlab folder to search path
+addpath('./mobius_query');
+
+% Check if MATLAB can find EstablishConnection
+if exist('EstablishConnection', 'file') ~= 2
+    
+    % If not, throw an error
+    Event(['The Mobius3D server query toolbox submodule does not exist in ', ...
+        'the search path. Use git clone --recursive or git submodule init ', ...
+        'followed by git submodule update to fetch all submodules'], ...
+        'ERROR');
+end
+
 % Log database load
 Event(['Loading default database file ', handles.dbFile]);
 
@@ -159,6 +172,10 @@ else
     % Otherwise, execute callback to prompt user to select a different db
     handles = opendb_Callback(handles.opendb, '', handles);
 end
+
+% Connect to Mobius3D server
+handles.m3d.session = EstablishConnection('server', handles.m3d.server, ...
+    'user', handles.m3d.user, 'pass', handles.m3d.pass);
 
 % Update handles structure
 guidata(hObject, handles);

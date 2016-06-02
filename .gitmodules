@@ -10,3 +10,6 @@
 [submodule "jsonlab"]
 	path = jsonlab
 	url = https://github.com/fangq/jsonlab
+[submodule "mobius_query"]
+	path = mobius_query
+	url = https://github.com/mwgeurts/mobius_query

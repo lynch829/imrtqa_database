@@ -54,18 +54,21 @@ if exist('LoadJSONTomoPlan', 'file') ~= 2
         'submodule update to fetch all submodules'], 'ERROR');
 end
 
-% Add jsonlab submodule to search path
-addpath('./jsonlab');
+% Add jsonlab folder to search path
+addpath('./mobius_query');
 
-% Check if MATLAB can find loadjson
-if exist('loadjson', 'file') ~= 2
+% Check if MATLAB can find EstablishConnection
+if exist('EstablishConnection', 'file') ~= 2
     
     % If not, throw an error
-    Event(['The jsonlab submodule does not exist in the search path. ', ...
-        'Use git clone --recursive or git submodule init followed by git ', ...
-        'submodule update to fetch all submodules'], 'ERROR');
+    Event(['The Mobius3D server query toolbox submodule does not exist in ', ...
+        'the search path. Use git clone --recursive or git submodule init ', ...
+        'followed by git submodule update to fetch all submodules'], ...
+        'ERROR');
 end
 
+% Retrieve updated Mobius3D patient list
+plist = QueryPatientList('server', server.server, 'session', server.session);
 
 % Log start of search and start timer
 Event(['Searching ', path, ' for IMRT QA reports']);
@@ -206,14 +209,13 @@ while i < size(list, 1)
             
             % If a Mobius3D server (and database) is provided
             if ~isempty(server) && ~isempty(db)
-                  
-                % Execute QueryMobius to search M3D server for plan
+                
+                % Search Mobius3D for check using plan name
                 Event(['Retrieving JSON and RTPLAN data from Mobius3D ', ...
                     'server']);
-                [mobius, rtplan, dvh] = QueryMobius('server', server.server, ...
-                    'user', server.user, 'pass', server.pass, ...
-                    'id', delta4.ID, 'plan', delta4.plan);
-                mobius.dvh = dvh;
+                [server.session, mobius] = MatchPlanCheck('server', ...
+                    server.server, 'session', server.session, 'id', ...
+                    delta4.ID, 'plan', delta4.plan, 'list', plist);
                 
                 % If no data was returned, search again by date
                 if isempty(mobius)
@@ -221,9 +223,18 @@ while i < size(list, 1)
                     Event(['Plan ', delta4.plan, ...
                         ' not found, searching by plan date']);
                     
-                    [mobius, rtplan] = QueryMobius('id', delta4.ID, ...
-                        'date', delta4.planDate);
+                    [server.session, mobius] = MatchPlanCheck('server', ...
+                        server.server, 'session', server.session, 'id', ...
+                        delta4.ID, 'date', delta4.planDate, 'list', plist);
                 end
+                
+                % Retrieve DVH and RTPlan
+                [server.session, mobius.dvh] = GetPlanCheckDVH('server', ...
+                    server.server, 'session', server.session, 'plan', ...
+                    mobius);
+                [server.session, rtplan] = GetRTPlan('server', ...
+                    server.server, 'session', server.session, 'plan', ...
+                    mobius);
                 
                 % If Mobius3D data does not already exist in database
                 if ~isempty(mobius) && ~isempty(db) && ...

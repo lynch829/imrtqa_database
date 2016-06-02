@@ -37,18 +37,6 @@ if exist('LoadPlan', 'file') ~= 2
         'submodule update to fetch all submodules'], 'ERROR');
 end
 
-% Add jsonlab submodule to search path
-addpath('./jsonlab');
-
-% Check if MATLAB can find loadjson
-if exist('loadjson', 'file') ~= 2
-    
-    % If not, throw an error
-    Event(['The jsonlab submodule does not exist in the search path. ', ...
-        'Use git clone --recursive or git submodule init followed by git ', ...
-        'submodule update to fetch all submodules'], 'ERROR');
-end
-
 % Log start of search and start timer
 Event(['Searching ', path, ' for TomoTherapy patient archives']);
 t = tic;
