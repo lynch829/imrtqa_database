@@ -68,7 +68,8 @@ if exist('EstablishConnection', 'file') ~= 2
 end
 
 % Retrieve updated Mobius3D patient list
-plist = QueryPatientList('server', server.server, 'session', server.session);
+[server.session, plist] = ...
+    QueryPatientList('server', server.server, 'session', server.session);
 
 % Log start of search and start timer
 Event(['Searching ', path, ' for IMRT QA reports']);
