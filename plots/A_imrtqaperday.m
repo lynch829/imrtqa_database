@@ -30,6 +30,12 @@ if isempty(data)
     return;
 end
 
+% Set column names
+columns = {'Statistic', 'Show', 'Mean', 'Min', 'Max'};
+
+% Initialize statistic rows
+rows = cell(4,5);
+
 % Plot histogram of dates
 subplot(2,2,1);
 c = histcounts(data, floor(range(1)):ceil(range(2)));
@@ -37,11 +43,16 @@ c(c == 0) = [];
 [d, e] = histcounts(c, 0:max(c)+2);
 plot(0:0.01:e(end), interp1(e(1:end-1), d, ...
     0:0.01:e(end), 'nearest', 'extrap'), 'LineWidth', 2);
-xlabel('Number of IMRT QA plans per day');
+xlabel('IMRT QA per day');
 ylabel('Occurrence');
 box on;
 grid on;
 PlotBackground('vertical', [0 0 5 10]);
+rows{1,1} = 'IMRT QA per day';
+rows{1,2} = true;
+rows{1,3} = sprintf('%0.1f', mean(c));
+rows{1,4} = sprintf('%i', min(c));
+rows{1,5} = sprintf('%i', max(c));
 
 % Compute start time, end time, and duration
 e = floor(min(data)):ceil(max(data));
@@ -68,6 +79,11 @@ ylabel('Occurrence');
 box on;
 grid on;
 PlotBackground('vertical', [0 0 3 4]);
+rows{2,1} = 'Duration (hours)';
+rows{2,2} = true;
+rows{2,3} = sprintf('%0.1f', mean(d));
+rows{2,4} = sprintf('%0.1f', min(d));
+rows{2,5} = sprintf('%0.1f', max(d));
 
 % Plot distribution of start times
 subplot(2,2,2);
@@ -81,6 +97,11 @@ ylabel('Occurrence');
 box on;
 grid on;
 PlotBackground('vertical', [0 0 19/24 1]);
+rows{3,1} = 'Start Time';
+rows{3,2} = true;
+rows{3,3} = datestr(mean(t(:,1)), 'HH:MM AM');
+rows{3,4} = datestr(min(t(:,1)), 'HH:MM AM');
+rows{3,5} = datestr(max(t(:,1)), 'HH:MM AM');
 
 % Plot distribution of finish times
 subplot(2,2,4);
@@ -94,11 +115,16 @@ ylabel('Occurrence');
 box on;
 grid on;
 PlotBackground('vertical', [0 0 21/24 23/24]);
+rows{4,1} = 'Finish Time';
+rows{4,2} = true;
+rows{4,3} = datestr(mean(t(:,2)), 'HH:MM AM');
+rows{4,4} = datestr(min(t(:,2)), 'HH:MM AM');
+rows{4,5} = datestr(max(t(:,2)), 'HH:MM AM');
 
 % Update stats
 if ~isempty(stats)
-    set(stats, 'Data', {});
-    set(stats, 'ColumnName', {});
+    set(stats, 'Data', rows);
+    set(stats, 'ColumnName', columns);
 end
 
 % Clear temporary variables
