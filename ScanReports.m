@@ -67,6 +67,9 @@ if exist('EstablishConnection', 'file') ~= 2
         'ERROR');
 end
 
+% Log list
+Event('Retrieving current patient list from database');
+
 % Retrieve updated Mobius3D patient list
 [server.session, plist] = ...
     QueryPatientList('server', server.server, 'session', server.session);
@@ -229,17 +232,17 @@ while i < size(list, 1)
                         delta4.ID, 'date', delta4.planDate, 'list', plist);
                 end
                 
-                % Retrieve DVH and RTPlan
-                [server.session, mobius.dvh] = GetPlanCheckDVH('server', ...
-                    server.server, 'session', server.session, 'plan', ...
-                    mobius);
-                [server.session, rtplan] = GetRTPlan('server', ...
-                    server.server, 'session', server.session, 'plan', ...
-                    mobius);
-                
                 % If Mobius3D data does not already exist in database
                 if ~isempty(mobius) && ~isempty(db) && ...
                         db.dataExists(mobius, 'mobuis') == 0
+                    
+                    % Retrieve DVH and RTPlan
+                    [server.session, mobius.dvh] = GetPlanCheckDVH('server', ...
+                        server.server, 'session', server.session, 'plan', ...
+                        mobius);
+                    [server.session, rtplan] = GetRTPlan('server', ...
+                        server.server, 'session', server.session, 'plan', ...
+                        mobius);
                     
                     % Execute addRecord to add result to database
                     Event('Saving Mobius3D data into database');
@@ -247,10 +250,12 @@ while i < size(list, 1)
                     
                 elseif ~isempty(mobius)
                     Event(['Mobius3D data already exists for this patient ', ...
-                        'in the database']);
+                        'in the database'], 'WARN');
+                    rtplan = [];
                 else
                     Event(['No Mobius3D data exists, moving on to ', ...
-                        'next patient']);
+                        'next patient'], 'WARN');
+                    rtplan = [];
                 end
             
                 % If plan data was returned
