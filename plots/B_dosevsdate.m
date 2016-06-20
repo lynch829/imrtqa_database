@@ -107,7 +107,11 @@ hold off;
 legend(machines(~strcmp(machines, '')));
 ylabel('Abs Dose Difference (%)');
 xlabel('');
-datetick('x','mm/dd/yy', 'keepticks');
+if range(2)-range(1) < 366
+    datetick('x','mm/dd', 'keepticks');
+else
+    datetick('x','mm/yyyy', 'keepticks');
+end
 box on;
 grid on;
 PlotBackground('horizontal', [-3 -2 2 3]);
@@ -163,7 +167,11 @@ hold off;
 legend(phantoms(~strcmp(phantoms, '')));
 ylabel('Abs Dose Difference (%)');
 xlabel('');
-datetick('x','mm/dd/yy', 'keepticks');
+if range(2)-range(1) < 366
+    datetick('x','mm/dd', 'keepticks');
+else
+    datetick('x','mm/yyyy', 'keepticks');
+end
 box on;
 grid on;
 PlotBackground('horizontal', [-3 -2 2 3]);
