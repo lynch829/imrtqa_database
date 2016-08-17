@@ -10,19 +10,32 @@ end
 % Initialize empty return variable
 delta4 = struct;
 
-% Store title and patient name
-fields = strsplit(content{1}, '   ');
-delta4.title = strtrim(fields{1});
-delta4.name = strtrim(fields{2});
-for i = 3:length(fields)
-    delta4.name = [delta4.name, ' ', strtrim(fields{i})];
+% If plan report is from version April 2016 or later
+if length(content{7}) > 7 && strcmp(content{7}(1:7), 'Clinic:')
+    
+    % Store title, patient name, and ID
+    delta4.title = strtrim(content{1});
+    delta4.name = strtrim(content{3});
+    delta4.ID = strtrim(content{5});
+
+    % Initialize row counter
+    r = 6;
+    
+else 
+    % Store title and patient name
+    fields = strsplit(content{1}, '   ');
+    delta4.title = strtrim(fields{1});
+    delta4.name = strtrim(fields{2});
+    for i = 3:length(fields)
+        delta4.name = [delta4.name, ' ', strtrim(fields{i})];
+    end
+
+    % Store patient ID
+    delta4.ID = strtrim(content{3});
+
+    % Initialize row counter
+    r = 4;
 end
-
-% Store patient ID
-delta4.ID = strtrim(content{3});
-
-% Initialize row counter
-r = 4;
 
 % Loop through rows until clinic info is found
 while r < length(content)
