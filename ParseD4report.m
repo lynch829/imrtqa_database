@@ -171,6 +171,8 @@ for i = 1:length(delta4.comments)
         delta4.phantom = 'Delta4 Red';
     elseif size(strfind(lower(delta4.comments{i}), 'black'), 1) > 0
         delta4.phantom = 'Delta4 Black'; 
+    elseif size(strfind(lower(delta4.comments{i}), 'delta4+'), 1) > 0
+        delta4.phantom = 'Delta4+'; 
     elseif regexp(delta4.comments{i}, '([0-9]+)[ ]?/[ ]?([0-9]+)') > 0
         
         fields = regexp(delta4.comments{i}, ...
